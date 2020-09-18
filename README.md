@@ -8,6 +8,5 @@ These recitations are held every other week by the various TAs, generally using 
 Issues, patches, and comments, especially by current and former students, are welcome.
 
 ### Contents
-- Note A: VM/kernel workflow setup, Linux source code navigators  
-
-(more to come...)
+- [Note A](A-Workflow/workflow.md): VM/kernel workflow setup, Linux source code navigators  
+- [Note B](B-Sockets-ServerTesting): Sockets/TCP programming, server testing strategies
