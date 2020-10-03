@@ -35,8 +35,8 @@ reported by `make help`:
     Cleaning targets:
   clean       - Remove most generated files but keep the config and
                 enough build support to build external modules
-  mrproper	  - Remove all generated files + config + various backup files
-  distclean	  - mrproper + remove editor backup and patch files
+  mrproper    - Remove all generated files + config + various backup files
+  distclean.  - mrproper + remove editor backup and patch files
 ```
 
 `make mrproper` is usually sufficient for our purposes.
@@ -59,7 +59,7 @@ top-level kernel directory:
   menuconfig      - Update current config utilising a menu based program
   oldconfig       - Update current config utilising a provided .config as base
   localmodconfig  - Update current config disabling modules not loaded
-  defconfig	      - New config with default from ARCH supplied defconfig
+  defconfig       - New config with default from ARCH supplied defconfig
   olddefconfig	  - Same as oldconfig but sets new symbols to their
                     default value without prompting
 ```
