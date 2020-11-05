@@ -23,7 +23,7 @@ The main problem with this implementation is that it does not extend well. At th
 
 By convention, Linux names these `struct {sched class}_rq`. For example, the CFS class is called `struct cfs_rq` and `struct cfs_rq cfs` for the strcture definition and member of `struct rq` respectivelly. 
 
-## The `feezer_rq`
+## The `freezer_rq`
 
 At this point, you have probably guessed that you will need to do the same thing for the freezer. You are right. The `feezer_rq` should include the head of the freezer runqueue. Additionally, you may need to include some bookkeeping variables. Word of advice, think of what you would actually need and don't have anything extra (it should be pretty simple). 
 
@@ -31,4 +31,9 @@ At this point, you have probably guessed that you will need to do the same thing
 
 Now that you have the `struct rq` setup, you need to have some mechanism to join your `task_struct`s into the queue. Here, too, you can't just include a `list_head node` to add a task onto the runqueue, but you can't include the `struct frezzer_rq` either for the simple reason that the bookkeeping is different. As you have probably guessed, we are going to wrap the list_head and all the bookkeeping variables in its own struct. In Linux, we name these structs `sched_{class}_entity` (one exception is that CFS names this `sched_entity`). For example, the Real-time scheduling class calls it `sched_rt_entity`. We will name ours `struct sched_freezer_entity`. Again, make sure you only include what you need in this struct. 
 
-With all this setup, here is what the final picture would look like. 
+With all this setup, here is what the final picture would look like this.
+
+
+<div align='center'>
+    <img src='./freezer.png'/><br/>
+</div>
