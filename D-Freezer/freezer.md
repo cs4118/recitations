@@ -7,6 +7,10 @@ One of the reasons students struggle with this assignment boils down to a lack o
 
 Recall from HW1 that in Linux, every process is defined by its `struct task_struct`. When you have multiple tasks forked off a common parent, they are linked together in a doubly linked-list `struct list_head siblings` embedded within the `task_struct`. For example, if you had four processes running on your system, each forked off one parent, it will look something like this (the parent is not shown): 
 
+<div align='center'>
+    <img src='./task_struct.png'/><br/>
+</div>
+
 However, at this stage, none of these processes are actually running on a CPU. In order to get them onto a CPU, I need to introduce you to the `struct rq`. 
 
 ## The `struct_rq`
