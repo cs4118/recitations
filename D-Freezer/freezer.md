@@ -41,3 +41,4 @@ With all this setup, here is what the final picture would look like:
     <img src='./freezer.png'/><br/>
 </div>
 
+In the picture above, the two structs on the far left represent a system with two CPUs. I colored these blue and green for two reasons: 1) to distinguish them from each other, and 2) to show different `task_structs` linked on one `siblings` linked-list can run on separate CPUs. 
