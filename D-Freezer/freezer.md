@@ -35,7 +35,7 @@ struct cfs_rq {
 	unsigned long		runnable_weight;
 	unsigned int		nr_running;
 	unsigned int		h_nr_running;
-    /* code omited */
+       /* code omited */
 };
 
 /*
@@ -46,11 +46,11 @@ struct cfs_rq {
  * acquire operations must be ordered by ascending &runqueue.
  */
 struct rq {
-    /* code omitted */
+        /* code omitted */
 	struct cfs_rq		cfs;
 	struct rt_rq		rt;
 	struct dl_rq		dl;
-    /* code omitted */
+        /* code omitted */
 }
 ```
 ## The `freezer_rq`
