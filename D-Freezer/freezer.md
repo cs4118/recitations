@@ -32,11 +32,11 @@ At this point, you have probably guessed that you will need to do the same thing
 
 ## The `sched_freezer_entity`
 
-Now that you have the `struct rq` setup, you need to have some mechanism to join your `task_struct`s into the queue. Here, too, you can't just include a `list_head node` to add a task onto the runqueue, but you can't include the `struct frezzer_rq` either for the simple reason that the bookkeeping is different. As you have probably guessed, we are going to wrap the list_head and all the bookkeeping variables in its own struct. In Linux, we name these structs `sched_{class}_entity` (one exception is that CFS names this `sched_entity`). For example, the Real-time scheduling class calls it `sched_rt_entity`. We will name ours `struct sched_freezer_entity`. Again, make sure you only include what you need in this struct. 
+Now that you have the `struct rq` setup, you need to have some mechanism to join your `task_struct`s into the queue. Here, too, you can't just include a `list_head node` to add a task onto the scheduler-specific runqueue because you'll need additional bookkeeping. As you have probably guessed, we are going to wrap the list_head and all the bookkeeping variables in its own struct. In Linux, we name these structs `sched_{class}_entity` (one exception is that CFS names this `sched_entity`). For example, the Real-time scheduling class calls it `sched_rt_entity`. We will name ours `struct sched_freezer_entity`. Again, make sure you only include what you need in this struct. 
 
-With all this setup, here is what the final picture would look like this.
-
+With all this setup, here is what the final picture would look like:
 
 <div align='center'>
     <img src='./freezer.png'/><br/>
 </div>
+
