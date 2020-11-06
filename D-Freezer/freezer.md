@@ -28,7 +28,7 @@ By convention, Linux scheduler-specific wrapper structures `struct <sched_class>
 
 ## The `freezer_rq`
 
-At this point, you have probably guessed that you will need to do the same thing for the freezer. You are right. The `feezer_rq` should include the head of the freezer runqueue. Additionally, you may need to include some bookkeeping variables. Word of advice, think of what you would actually need and don't have anything extra (it should be pretty simple). 
+At this point, you have probably guessed that you will need to do the same thing for the freezer. You are right. The `freezer_rq` should include the head of the freezer runqueue. Additionally, you may need to include some bookkeeping variables. Word of advice, think of what you would actually need and don't have anything extra (it should be pretty simple). 
 
 ## The `sched_freezer_entity`
 
