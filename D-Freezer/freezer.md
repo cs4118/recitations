@@ -18,7 +18,10 @@ However, at this stage, none of these processes are actually running on a CPU. I
 The `struct rq` is a per-cpu run queue data structure. I like to think of it as the virtual CPU. It contains a lot of information (must of which goes way over my head), but it also includes the list of tasks that will (eventually) run on that CPU. 
 So how does that work? 
 A naive implementation would be to embed a `struct list_head runqueue_head` (for example) into the `struct rq`, and embed a `struct list_head node` into every `task_struct`. 
-
+<div align='center'>
+    <img src='./naive.png'/><br/>
+    This is BAD implementation. 
+</div
 The main problem with this implementation is that it does not extend well. At this point, you know Linux has more than one scheduling class. Linux comes built with a Deadline class, a Real-time class, and the primary CFS. Having a `list_head` embedded directly into the `struct rq` for each scheduling class is not feasible. The solution is to create a new structure containing the `list_head` and any bookkeeping variables into a separate structure. Then, we can include just the wrapper structure in the `struct rq`. Linux includes these structures in `linux/kernel/sched/sched.h`. 
 
 By convention, Linux names these `struct {sched class}_rq`. For example, the CFS class is called `struct cfs_rq` and `struct cfs_rq cfs` for the strcture definition and member of `struct rq` respectivelly. 
