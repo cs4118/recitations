@@ -22,6 +22,7 @@ A naive implementation would be to embed a `struct list_head runqueue_head` (for
     <img src='./naive.png'/><br/>
     This is a BAD implementation. 
 </div>
+
 The main problem with this implementation is that it does not extend well. At this point, you know Linux has more than one scheduling class. Linux comes built with a Deadline class, a Real-time class, and the primary CFS. Having a `list_head` embedded directly into the `struct rq` for each scheduling class is not feasible. The solution is to create a new structure containing the `list_head` and any bookkeeping variables into a separate structure. Then, we can include just the wrapper structure in the `struct rq`. Linux includes these structures in `linux/kernel/sched/sched.h`. 
 
 By convention, Linux scheduler-specific wrapper structures `struct <sched_class>_rq`. For example, the CFS class defines a `struct cfs_rq` which is then declared inside of `struct rq` as `struct cfs_rq cfs`.
