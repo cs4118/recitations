@@ -27,6 +27,32 @@ The main problem with this implementation is that it does not extend well. At th
 
 By convention, Linux scheduler-specific wrapper structures `struct <sched_class>_rq`. For example, the CFS class defines a `struct cfs_rq` which is then declared inside of `struct rq` as `struct cfs_rq cfs`.
 
+The following snipt is taken from `/kernel/sched/sched.h`
+```
+/* CFS-related fields in a runqueue */
+struct cfs_rq {
+	struct load_weight	load;
+	unsigned long		runnable_weight;
+	unsigned int		nr_running;
+	unsigned int		h_nr_running;
+    /* code omited */
+};
+
+/*
+ * This is the main, per-CPU runqueue data structure.
+ *
+ * Locking rule: those places that want to lock multiple runqueues
+ * (such as the load balancing or the thread migration code), lock
+ * acquire operations must be ordered by ascending &runqueue.
+ */
+struct rq {
+    /* code omitted */
+	struct cfs_rq		cfs;
+	struct rt_rq		rt;
+	struct dl_rq		dl;
+    /* code omitted */
+}
+```
 ## The `freezer_rq`
 
 At this point, you have probably guessed that you will need to do the same thing for the freezer. You are right. The `freezer_rq` should include the head of the freezer runqueue. Additionally, you may need to include some bookkeeping variables. Word of advice, think of what you would actually need and don't have anything extra (it should be pretty simple). 
