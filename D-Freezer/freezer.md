@@ -183,7 +183,7 @@ One final thing, you may have noticed the first member of `struct sched_class` o
     <img src='./allclass.png'/><br/>
 </div>
 
-The first class on the list is of higher priority than the second. In other words, `sched_class_dl` has a higher priority than `sched_class_rt`. Now, every time a new process needs to be scheduled, the schedular can simply go through the class list and check if there is a process of that class that needs to run. Let's take a look at this in practice as implemented in `linux\kernel\sched\core.c`.  
+The first class on the list is of higher priority than the second. In other words, `sched_class_dl` has a higher priority than `sched_class_rt`. Now, every time a new process needs to be scheduled, the OS can simply go through the class list and check if there is a process of that class that needs to run. Let's take a look at this in practice as implemented in `linux\kernel\sched\core.c`.  
 
 ```
 static inline struct task_struct *
@@ -205,4 +205,4 @@ pick_next_task(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
 	BUG();
 }
 ```
-Essentially, `__schedule()` will call the genetic `pick_next_task()` and it will loop through each scheduling class by calling `for_each_class(class)` `class->pick_next_task()`. Here, we call the `pick_next_task()` of a particualr instatence of `struct sched_class`. If `pick_next_task()` returns `NULL`, the kernel will simply move on to the next class. If the kernel reached the lowest priority class on the list (i.e. `idle_sched_class`) than there are no tasks to be runned and cpu is just gonna go into idle mode. 
+Essentially, when a process wants to relinquish its time on a CPU, schedule() gets called. Following the chain of calls in the kernel, pick_next_task() eventually gets called, and the OS will loop through each scheduling class by calling `for_each_class(class)` `class->pick_next_task()`. Here, we call the `pick_next_task()` of a particualr instatence of `struct sched_class`. If `pick_next_task()` returns `NULL`, the kernel will simply move on to the next class. If the kernel reached the lowest priority class on the list (i.e. `idle_sched_class`) than there are no tasks to be runned and cpu is just gonna go into idle mode. 
