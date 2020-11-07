@@ -205,4 +205,4 @@ pick_next_task(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
 	BUG();
 }
 ```
-Essentially, `__schedule()` will call the genetic `pick_next_task()` and it will loop through each scheduling class by calling `for_each_class(class)` `class->pick_next_task()`. Here, we call the `pick_next_task()` of a particualr instatence of `struct sched_class`. If `pick_next_task()` returns `NULL`, the kernel will simply move on to the next class. If the kernel reached the lowest priority class on the list (i.e. `idle_sched_class`) than there are no tasks to be runned and cpu is just gonna go to idle mode. 
+Essentially, `__schedule()` will call the genetic `pick_next_task()` and it will loop through each scheduling class by calling `for_each_class(class)` `class->pick_next_task()`. Here, we call the `pick_next_task()` of a particualr instatence of `struct sched_class`. If `pick_next_task()` returns `NULL`, the kernel will simply move on to the next class. If the kernel reached the lowest priority class on the list (i.e. `idle_sched_class`) than there are no tasks to be runned and cpu is just gonna go into idle mode. 
