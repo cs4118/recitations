@@ -11,3 +11,4 @@ Issues, patches, and comments, especially by current and former students, are we
 - [Note A](A-Workflow/workflow.md): VM/kernel workflow setup, Linux source code navigators  
 - [Note B](B-Sockets-ServerTesting): Sockets/TCP programming, server testing strategies
 - [Note C](C-Linux-Kernel-Dev/linux-kernel-dev.md): Kernel configuration, compilation, and style
+- [Note D](D-Freezer/freezer.md): Linux scheduler data structures, implementing a scheduler (hw6)
