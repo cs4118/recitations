@@ -181,7 +181,6 @@ As you can see, CFS initializes the `struct sched_class` function pointers to th
 One final thing, you may have noticed the first member of `struct sched_class` of `const struct sched_class *next`. That is because all the scheduling classes are linked together on a singly linked list like this. 
 <div align='center'>
     <img src='./allclass.png'/><br/>
-    This is a BAD implementation. 
 </div>
 
 The first class on the list is of higher priority than the second. In other words, `sched_class_dl` has a higher priority than `sched_class_rt`. Now, every time a new process needs to be scheduled, the schedular can simply go through the class list and check if there is a process of that class that needs to run. If there isn't, it will move to the next class.  
