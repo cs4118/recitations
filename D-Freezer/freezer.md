@@ -60,3 +60,128 @@ With all this setup, here is what the final picture would look like:
 </div>
 
 In the picture above, the two structs on the far left represent a system with two CPUs. I colored these blue and green for two reasons: 1) to distinguish them from each other, and 2) to show different `task_structs` linked on one `siblings` linked-list can run on separate CPUs. 
+
+## The `sched_class`
+
+At this point, we have set up the data structures, but we are still not done. We now need to implement the freezer functionality to let the Kernel to use the freezer as a scheduler. 
+Here is the problem. Say we have a CFS task about to return from main(), we need to call the CFS `decueue_task()` to remove it from the CFS queue. How can we ensure that the Kernel will call the CFS implementation of `dequeue_task()`? The answer is `struct sched_class` defined in `linux/kernel/sched/sched.h`. Here is what the structure looks like.
+```
+struct sched_class {
+	const struct sched_class *next;
+
+	void (*enqueue_task) (struct rq *rq, struct task_struct *p, int flags);
+	void (*dequeue_task) (struct rq *rq, struct task_struct *p, int flags);
+	void (*yield_task)   (struct rq *rq);
+	bool (*yield_to_task)(struct rq *rq, struct task_struct *p, bool preempt);
+
+	void (*check_preempt_curr)(struct rq *rq, struct task_struct *p, int flags);
+
+	/*
+	 * It is the responsibility of the pick_next_task() method that will
+	 * return the next task to call put_prev_task() on the @prev task or
+	 * something equivalent.
+	 *
+	 * May return RETRY_TASK when it finds a higher prio class has runnable
+	 * tasks.
+	 */
+	struct task_struct * (*pick_next_task)(struct rq *rq,
+					       struct task_struct *prev,
+					       struct rq_flags *rf);
+	void (*put_prev_task)(struct rq *rq, struct task_struct *p);
+
+#ifdef CONFIG_SMP
+	int  (*select_task_rq)(struct task_struct *p, int task_cpu, int sd_flag, int flags);
+	void (*migrate_task_rq)(struct task_struct *p, int new_cpu);
+
+	void (*task_woken)(struct rq *this_rq, struct task_struct *task);
+
+	void (*set_cpus_allowed)(struct task_struct *p,
+				 const struct cpumask *newmask);
+
+	void (*rq_online)(struct rq *rq);
+	void (*rq_offline)(struct rq *rq);
+#endif
+
+	void (*set_curr_task)(struct rq *rq);
+	void (*task_tick)(struct rq *rq, struct task_struct *p, int queued);
+	void (*task_fork)(struct task_struct *p);
+	void (*task_dead)(struct task_struct *p);
+
+	/*
+	 * The switched_from() call is allowed to drop rq->lock, therefore we
+	 * cannot assume the switched_from/switched_to pair is serliazed by
+	 * rq->lock. They are however serialized by p->pi_lock.
+	 */
+	void (*switched_from)(struct rq *this_rq, struct task_struct *task);
+	void (*switched_to)  (struct rq *this_rq, struct task_struct *task);
+	void (*prio_changed) (struct rq *this_rq, struct task_struct *task,
+			      int oldprio);
+
+	unsigned int (*get_rr_interval)(struct rq *rq,
+					struct task_struct *task);
+
+	void (*update_curr)(struct rq *rq);
+
+#define TASK_SET_GROUP		0
+#define TASK_MOVE_GROUP		1
+
+#ifdef CONFIG_FAIR_GROUP_SCHED
+	void (*task_change_group)(struct task_struct *p, int type);
+#endif
+};
+```
+As you can see, the `struct sched_class` contains many function pointers. When we add a new scheduling class, we create an instance of `struct sched_class` and set the function pointers to point to our implementation of these functions. Perhaps an illustration is in order. If we look in the file `linux/kernel/sched/fair.c`, we see how CFS does it. 
+
+```
+const struct sched_class fair_sched_class = {
+	.next			= &idle_sched_class,
+	.enqueue_task		= enqueue_task_fair,
+	.dequeue_task		= dequeue_task_fair,
+	.yield_task		= yield_task_fair,
+	.yield_to_task		= yield_to_task_fair,
+
+	.check_preempt_curr	= check_preempt_wakeup,
+
+	.pick_next_task		= pick_next_task_fair,
+	.put_prev_task		= put_prev_task_fair,
+
+#ifdef CONFIG_SMP
+	.select_task_rq		= select_task_rq_fair,
+	.migrate_task_rq	= migrate_task_rq_fair,
+
+	.rq_online		= rq_online_fair,
+	.rq_offline		= rq_offline_fair,
+
+	.task_dead		= task_dead_fair,
+	.set_cpus_allowed	= set_cpus_allowed_common,
+#endif
+
+	.set_curr_task          = set_curr_task_fair,
+	.task_tick		= task_tick_fair,
+	.task_fork		= task_fork_fair,
+
+	.prio_changed		= prio_changed_fair,
+	.switched_from		= switched_from_fair,
+	.switched_to		= switched_to_fair,
+
+	.get_rr_interval	= get_rr_interval_fair,
+
+	.update_curr		= update_curr_fair,
+
+#ifdef CONFIG_FAIR_GROUP_SCHED
+	.task_change_group	= task_change_group_fair,
+#endif
+};
+```
+
+Note, the dot notation is a C99 feature that allows you to set specific fields of the struct by name in an initializer. Also, not every function needs to be implemented. You will need to figure out what is and is not necessary.  
+
+As you can see, CFS initializes the `struct sched_class` function pointers to the CFS implementation. Two things of note here. First, the convention is to name the struct `<class_name>_sched_class`, so CFS names it `fair_sched_class`. The second thing of note is to name a particular class's functions as `<function_name>_<class_name>`. For example, the CFS implementation of `enqueue_task` as `enqueue_task_fair`. Now, every time the Kernel needs to call function, it can call can simply call `p->sched_class-><function()>`. Here, `p` is of the type `task_struct *`, `sched_class` is a pointer within the `task_struct` pointing to an instanece of `struct sched_class`, and the `<function()>` points the spesific implementaion of the the function to be called(). 
+
+One final thing, you may have noticed the first member of `struct sched_class` of `const struct sched_class *next`. That is because all the scheduling classes are linked together on a singly linked list like this. 
+<div align='center'>
+    <img src='./allclass.png'/><br/>
+    This is a BAD implementation. 
+</div>
+
+The first class on the list is of higher priority than the second. In other words, `sched_class_dl` has a higher priority than `sched_class_rt`. Now, every time a new process needs to be scheduled, the schedular can simply go through the class list and check if there is a process of that class that needs to run. If there isn't, it will move to the next class.  
