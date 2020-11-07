@@ -64,7 +64,7 @@ In the picture above, the two structs on the far left represent a system with tw
 ## The `sched_class`
 
 At this point, we have set up the data structures, but we are still not done. We now need to implement the freezer functionality to let the Kernel to use the freezer as a scheduler. 
-Here is the problem. Say we have a CFS task about to return from main(), we need to call the CFS `decueue_task()` to remove it from the CFS queue. How can we ensure that the Kernel will call the CFS implementation of `dequeue_task()`? The answer is `struct sched_class` defined in `linux/kernel/sched/sched.h`. Here is what the structure looks like.
+Here is the problem. Say we have a CFS task about to return from main(), the OS needs to call the CFS `decueue_task()` to remove it from the CFS queue. How can we ensure that the OS will call the CFS implementation of `dequeue_task()`? The answer is `struct sched_class` defined in `linux/kernel/sched/sched.h`. Here is what the structure looks like.
 ```
 struct sched_class {
 	const struct sched_class *next;
@@ -174,7 +174,7 @@ const struct sched_class fair_sched_class = {
 };
 ```
 
-Note, the dot notation is a C99 feature that allows you to set specific fields of the struct by name in an initializer. Also, not every function needs to be implemented. You will need to figure out what is and is not necessary.  
+Note, the dot notation is a C99 feature that allows you to set specific fields of the struct by name in an initializer. This notaion is also called [designated initializers](http://gcc.gnu.org/onlinedocs/gcc/Designated-Inits.html). Also, not every function needs to be implemented. You will need to figure out what is and is not necessary. "To see an example of a bare minimum scheduler, see the [idle_sched_class](https://elixir.bootlin.com/linux/v4.19.50/source/kernel/sched/idle.c#L457), which is the scheduling policy used when no other tasks are ready to be executed. 
 
 As you can see, CFS initializes the `struct sched_class` function pointers to the CFS implementation. Two things of note here. First, the convention is to name the struct `<class_name>_sched_class`, so CFS names it `fair_sched_class`. The second thing of note is to name a particular class's functions as `<function_name>_<class_name>`. For example, the CFS implementation of `enqueue_task` as `enqueue_task_fair`. Now, every time the Kernel needs to call function, it can call can simply call `p->sched_class-><function()>`. Here, `p` is of the type `task_struct *`, `sched_class` is a pointer within the `task_struct` pointing to an instanece of `struct sched_class`, and the `<function()>` points the spesific implementaion of the the function to be called(). 
 
@@ -183,4 +183,26 @@ One final thing, you may have noticed the first member of `struct sched_class` o
     <img src='./allclass.png'/><br/>
 </div>
 
-The first class on the list is of higher priority than the second. In other words, `sched_class_dl` has a higher priority than `sched_class_rt`. Now, every time a new process needs to be scheduled, the schedular can simply go through the class list and check if there is a process of that class that needs to run. If there isn't, it will move to the next class.  
+The first class on the list is of higher priority than the second. In other words, `sched_class_dl` has a higher priority than `sched_class_rt`. Now, every time a new process needs to be scheduled, the schedular can simply go through the class list and check if there is a process of that class that needs to run. Let's take a look at this in practice as implemented in `linux\kernel\sched\core.c`.  
+
+```
+static inline struct task_struct *
+pick_next_task(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
+{
+	const struct sched_class *class;
+	struct task_struct *p;
+	/* code omitted */
+	for_each_class(class) {
+		p = class->pick_next_task(rq, prev, rf);
+		if (p) {
+			if (unlikely(p == RETRY_TASK))
+				goto again;
+			return p;
+		}
+	}
+
+	/* The idle class should always have a runnable task: */
+	BUG();
+}
+```
+Essentially, `__schedule()` will call the genetic `pick_next_task()` and it will loop through each scheduling class by calling `for_each_class(class)` `class->pick_next_task()`. Here, we call the `pick_next_task()` of a particualr instatence of `struct sched_class` `If `pick_next_task()` returns `NULL`, the kernel will simply move on to the next class. If the kernel reached the lowest priority class on the list (i.e. `idle_sched_class`) than there are no tasks to be runned and cpu is just gonna go to idle mode. 
