@@ -46,6 +46,16 @@ within the page frame.
     <img src='https://os.phil-opp.com/page-tables/X86_Paging_64bit.svg'/>
 </div>
 
+For clarity, we're using the naming scheme in the diagram (P4, P3,...), which
+differs slightly from the names used in Linux. Linux also implements 5-level
+paging, which we describe in the next section. For reference, here is how the
+names above mapped to Linux before it added 5-level paging:
+
+```
+Diagram: P4  -> P3  -> P2  -> P1  -> page frame
+Linux:   PGD -> PUD -> PMD -> PTE -> page frame
+```
+
 Each entry in the P4 table is the address of a *different* P3 table such that
 each page table can have up to 512 different P3 tables. In turn, each entry in a
 P3 table points to a different P2 table such that there are 512 * 512 = 262,144
@@ -54,12 +64,12 @@ process, the kernel does not allocate frames for most of the intermediary tables
 comprising the page table.
 
 I've been using the word frame since each page table entry (in any table, P4,
-P3, etc) is the address of a physical 4096 byte memory frame. These addresses
-cannot be virtual addresses since the hardware accesses them directly to
-translate virtual addresses to physical addresses. Furthermore, since frames are
-page aligned, the last 12 bits of a frame address are all zeros. The hardware
-takes advantage of this by using these bits to store information about the frame
-in its page table entry.
+P3, etc) is the address of a physical 4096 byte memory frame (except for huge
+pages). These addresses cannot be virtual addresses since the hardware accesses
+them directly to translate virtual addresses to physical addresses. Furthermore,
+since frames are page aligned, the last 12 bits of a frame address are all
+zeros. The hardware takes advantage of this by using these bits to store
+information about the frame in its page table entry.
 
 <div align='center'>
 <imp src='https://wiki.osdev.org/images/9/9b/Page_table.png'/>
@@ -74,7 +84,7 @@ set of flags exists for the intermediary entries as well.
 In this section we'll take a look at the data structures and functions the Linux
 kernel defines to manage page tables.
 
-### The fifth level - anger
+### The fifth level of Dante's page table
 We just finished discussing 4-level page tables, but Linux actually implements
 5-level paging and exposes a 5-level paging interface, even when the kernel is
 built with 5-level paging disabled. Luckily 5-level paging is similar to the
