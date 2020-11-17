@@ -26,7 +26,7 @@ hardware does this by using the virtual address as a set of indices into the
 page table.
 
 <div align='center'>
-    <img src='https://os.phil-opp.com/page-tables/x86_address_structure.svg'/>
+    <img src='./x86_address_structure.svg'/>
 </div>
 [Source](https://os.phil-opp.com/page-tables)
 
@@ -43,7 +43,7 @@ The last 12 bits allow the virtual address to specify a specific byte offset
 within the page frame.
 
 <div align='center'>
-    <img src='https://os.phil-opp.com/page-tables/X86_Paging_64bit.svg'/>
+    <img src='./X86_Paging_64bit.svg'/>
 </div>
 
 For clarity, we're using the naming scheme in the diagram (P4, P3,...), which
@@ -72,7 +72,7 @@ zeros. The hardware takes advantage of this by using these bits to store
 information about the frame in its page table entry.
 
 <div align='center'>
-<imp src='https://wiki.osdev.org/images/9/9b/Page_table.png'/>
+<imp src='./Page_table.png'/>
 </div>
 [Source](https://wiki.osdev.org/Paging)
 
@@ -113,7 +113,7 @@ CONFIG_PGTABLE_LEVELS=4
 ```
 
 If we look at the [sample
-session](https://github.com/cs4118/cabinet/blob/master/docs/testing/session1.md)
+session](./session1.md)
 from the Cabinet prompt, it shows that the `pgd_paddr` and `p4d_paddr` are
 identical.
 
