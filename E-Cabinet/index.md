@@ -73,7 +73,7 @@ zeros. The hardware takes advantage of this by using these bits to store
 information about the frame in its page table entry.
 
 <div align='center'>
-<imp src='./Page_table.png'/>
+<img src='./Page_table.png'/>
 </div>
 
 [Source](https://wiki.osdev.org/Paging)
@@ -247,4 +247,6 @@ physical address the entry points to you'll need to `&` the value with the
 correct mask, which varies depending on whether the entry points to a huge page
 or a normal page. Hint: the kernel provides macros that figure this out for you
 for each page table level that supports huge pages.
+
+
 
