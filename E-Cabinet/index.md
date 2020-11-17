@@ -249,4 +249,15 @@ or a normal page. Hint: the kernel provides macros that figure this out for you
 for each page table level that supports huge pages.
 
 
+### Page dirty and refcount
+Recall from before that a flag in the page table entry indicates whether the
+page frame is dirty or not. Do not read the flag directly; the kernel provides
+a macro for this purpose.
+
+You will find section 3.4 of Gordman useful for figuring out how to retrieve
+the refcount of a page frame. Hint: every physical frame has a `struct page` in
+the kernel, which is defined
+[here](https://elixir.bootlin.com/linux/v4.19.50/source/include/linux/mm_types.h).
+Be sure to use the correct kernel functions / macros to access any information
+in `struct page`.
 
