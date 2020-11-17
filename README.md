@@ -12,3 +12,4 @@ Issues, patches, and comments, especially by current and former students, are we
 - [Note B](B-Sockets-ServerTesting): Sockets/TCP programming, server testing strategies
 - [Note C](C-Linux-Kernel-Dev/linux-kernel-dev.md): Kernel configuration, compilation, and style
 - [Note D](D-Freezer/freezer.md): Linux scheduler data structures, implementing a scheduler (hw6)
+- [Note E](E-Cabinet/index.md): Linux page table data structures, macros/functions (hw7)
