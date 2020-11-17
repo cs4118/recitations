@@ -28,6 +28,7 @@ page table.
 <div align='center'>
     <img src='./x86_address_structure.svg'/>
 </div>
+
 [Source](https://os.phil-opp.com/page-tables)
 
 This diagram shows how the bits of a 64 bit virtual address specify the indices
@@ -74,6 +75,7 @@ information about the frame in its page table entry.
 <div align='center'>
 <imp src='./Page_table.png'/>
 </div>
+
 [Source](https://wiki.osdev.org/Paging)
 
 This diagram shows the bit flags for a page table entry, which in our diagram
