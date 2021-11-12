@@ -28,7 +28,8 @@ The main problem with this implementation is that it does not extend well. At th
 By convention, Linux scheduler-specific wrapper structures `struct <sched_class>_rq`. For example, the CFS class defines a `struct cfs_rq` which is then declared inside of `struct rq` as `struct cfs_rq cfs`.
 
 snippet is taken from `linux/kernel/sched/sched.h`
-```
+
+```c
 struct cfs_rq {
 	struct load_weight	load;
 	unsigned long		runnable_weight;
@@ -43,7 +44,7 @@ struct rq {
 	struct rt_rq		rt;
 	struct dl_rq		dl;
         /* code omitted */
-}
+};
 ```
 ## The `freezer_rq`
 
@@ -65,7 +66,8 @@ In the picture above, the two structs on the far left represent a system with tw
 
 At this point, we have set up the data structures, but we are still not done. We now need to implement the freezer functionality to let the Kernel to use the freezer as a scheduler. 
 Here is the problem. Say we have a CFS task about to return from main(), the OS needs to call the CFS `decueue_task()` to remove it from the CFS queue. How can we ensure that the OS will call the CFS implementation of `dequeue_task()`? The answer is `struct sched_class` defined in `linux/kernel/sched/sched.h`. Here is what the structure looks like.
-```
+
+```c
 struct sched_class {
 	const struct sched_class *next;
 
@@ -132,7 +134,7 @@ struct sched_class {
 ```
 As you can see, the `struct sched_class` contains many function pointers. When we add a new scheduling class, we create an instance of `struct sched_class` and set the function pointers to point to our implementation of these functions. Perhaps an illustration is in order. If we look in the file `linux/kernel/sched/fair.c`, we see how CFS does it. 
 
-```
+```c
 const struct sched_class fair_sched_class = {
 	.next			= &idle_sched_class,
 	.enqueue_task		= enqueue_task_fair,
@@ -185,7 +187,7 @@ One final thing, you may have noticed the first member of `struct sched_class` o
 
 The first class on the list is of higher priority than the second. In other words, `sched_class_dl` has a higher priority than `sched_class_rt`. Now, every time a new process needs to be scheduled, the OS can simply go through the class list and check if there is a process of that class that needs to run. Let's take a look at this in practice as implemented in `linux\kernel\sched\core.c`.  
 
-```
+```c
 static inline struct task_struct *
 pick_next_task(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
 {
