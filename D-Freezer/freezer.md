@@ -199,19 +199,19 @@ One final thing: you may have noticed the first member of `struct sched_class` i
 The first class on the list is of higher priority than the second. In other words, `sched_class_dl` has a higher priority than `sched_class_rt`. Now, every time a new process needs to be scheduled, the kernel can simply go through the class list and check if there is a process of that class that needs to run. Let's take a look at this in practice as implemented in `linux\kernel\sched\core.c`.
 
 ```c
+
 static inline struct task_struct *
 pick_next_task(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
 {
 	const struct sched_class *class;
 	struct task_struct *p;
-	/* code omitted */
+
+    /* code omitted */
+
 	for_each_class(class) {
-		p = class->pick_next_task(rq, prev, rf);
-		if (p) {
-			if (unlikely(p == RETRY_TASK))
-				goto again;
+		p = class->pick_next_task(rq);
+		if (p)
 			return p;
-		}
 	}
 
 	/* The idle class should always have a runnable task: */
