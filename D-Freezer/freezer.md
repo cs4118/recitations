@@ -190,13 +190,29 @@ Note that the dot notation is a C99 feature that allows you to set specific fiel
 
 As you can see, CFS initializes the `struct sched_class` function pointers to the CFS implementation. Two things of note here. First, the convention is to name the struct `<class_name>_sched_class`, so CFS names it `fair_sched_class`. Second, we name a particular class's functions as `<function_name>_<class_name>`. For example, the CFS implementation of `enqueue_task` as `enqueue_task_fair`. Now, every time the kernel needs to call a function, it can simply call `p->sched_class-><function()>`. Here, `p` is of the type `task_struct *`, `sched_class` is a pointer within the `task_struct` pointing to an instance of `struct sched_class`, and the `<function()>` points to the specific implementaion of the the function to be called.
 
-One final thing: you may have noticed the first member of `struct sched_class` is `const struct sched_class *next`. That is because all the scheduling classes are linked together on a singly linked list like this.
+One final thing: you may have noticed the `__section("__fair_sched_class")` macro in the declaration of`struct sched_class fair_sched_class`.
+When building the kernel, this allows the linker to align the `sched_class`'s contiguously in memory through the use of a linker script. A linker script describes how various sections in the input (source) files should be mapped into the output (binary/object) file, and to control the memory layout of the output file.
 
-<div align='center'>
-    <img src='./allclass.png'/><br/>
-</div>
+We can see this in `linux/include/asm-generic/vmlinux.lds.h`:
 
-The first class on the list is of higher priority than the second. In other words, `sched_class_dl` has a higher priority than `sched_class_rt`. Now, every time a new process needs to be scheduled, the kernel can simply go through the class list and check if there is a process of that class that needs to run. Let's take a look at this in practice as implemented in `linux\kernel\sched\core.c`.
+```c
+/*
+ * The order of the sched class addresses are important, as they are
+ * used to determine the order of the priority of each sched class in
+ * relation to each other.
+ */
+#define SCHED_DATA				\
+	STRUCT_ALIGN();				\
+	__begin_sched_classes = .;		\
+	*(__idle_sched_class)			\
+	*(__fair_sched_class)			\
+	*(__rt_sched_class)			\
+	*(__dl_sched_class)			\
+	*(__stop_sched_class)			\
+	__end_sched_classes = .;
+```
+
+ This effectively allows the kernel to treat the `sched_class` structs as part of an array of `sched_class`'s.The first class in the array is of lower priority than the second. In other words, `sched_class_dl` has a higher priority than `sched_class_rt`. Now, every time a new process needs to be scheduled, the kernel can simply go through the class array and check if there is a process of that class that needs to run. Let's take a look at this in practice as implemented in `linux\kernel\sched\core.c`.
 
 ```c
 
@@ -217,6 +233,24 @@ pick_next_task(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
 	/* The idle class should always have a runnable task: */
 	BUG();
 }
+```
+
+This makes use of the `for_each_class()` macro, which takes advantage of the array structure of the `sched_class`'s.
+We can see this implementation in `linux/kernel/sched/sched.h`:
+
+```c
+/* Defined in include/asm-generic/vmlinux.lds.h */
+extern struct sched_class __begin_sched_classes[];
+extern struct sched_class __end_sched_classes[];
+
+#define sched_class_highest (__end_sched_classes - 1)
+#define sched_class_lowest  (__begin_sched_classes - 1)
+
+#define for_class_range(class, _from, _to) \
+	for (class = (_from); class != (_to); class--)
+
+#define for_each_class(class) \
+	for_class_range(class, sched_class_highest, sched_class_lowest)
 ```
 
 Essentially, when a process wants to relinquish its time on a CPU, `schedule()` gets called. Following the chain of calls in the kernel, `pick_next_task()` eventually gets called, and the OS will loop through each scheduling class by calling `for_each_class(class)`. Here, we call the `pick_next_task()` function of a particular instance of `struct sched_class`. If `pick_next_task()` returns `NULL`, the kernel will simply move on to the next class. If the kernel reaches the lowest priority class on the list (i.e. `idle_sched_class`) then there are no tasks to run and the CPU will go into idle mode.
