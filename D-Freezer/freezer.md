@@ -36,19 +36,19 @@ The following snippet is taken from `linux/kernel/sched/sched.h`:
 
 ```c
 struct cfs_rq {
-	struct load_weight	load;
-	unsigned long		runnable_weight;
-	unsigned int		nr_running;
-	unsigned int		h_nr_running;
-       /* code omitted */
+    struct load_weight  load;
+    unsigned int        nr_running;
+    unsigned int        h_nr_running;
+    unsigned int        idle_h_nr_running;
+    /* code omitted */
 };
 
 struct rq {
-        /* code omitted */
-	struct cfs_rq		cfs;
-	struct rt_rq		rt;
-	struct dl_rq		dl;
-        /* code omitted */
+    /* code omitted */
+    struct cfs_rq       cfs;
+    struct rt_rq        rt;
+    struct dl_rq        dl;
+    /* code omitted */
 };
 ```
 
