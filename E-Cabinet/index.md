@@ -1,5 +1,5 @@
 # Understanding Page Tables in Linux
-The goal of this recitation is to provide a high-level overview of x86 paging as
+The goal of this recitation is to provide a high-level overview of x86/arm64 paging as
 well as the data structures and functions the Linux kernel uses to manipulate
 page tables.
 
@@ -32,7 +32,7 @@ page table.
 [Source](https://os.phil-opp.com/page-tables)
 
 This diagram shows how the bits of a 64 bit virtual address specify the indices
-into a 4-level x86 page table. With 4-level paging only bits 0 through 47 are
+into a 4-level page table. With 4-level paging only bits 0 through 47 are
 used. Bits 48 through 63 are sign extension bits that must match bit 47; this
 prevents clever developers from stuffing extra information into addresses that
 might interfere with future addressing schemes, like 5-level page tables.
@@ -115,7 +115,7 @@ CONFIG_PGTABLE_LEVELS=4
 ```
 
 If we look at the [sample
-session](./session1.md)
+session](https://cs4118.github.io/cabinet/testing/session1.html)
 from the Cabinet prompt, it shows that the `pgd_paddr` and `p4d_paddr` are
 identical.
 
@@ -132,7 +132,7 @@ dirty: no
 refcount: 57
 ```
 
-Digging into `arch/x86/asm/pgtable_types.h`, we see the following:
+Digging into `arch/x86/include/asm/pgtable_types.h`, we see the following:
 
 ```C
 #if CONFIG_PGTABLE_LEVELS > 4
@@ -161,7 +161,7 @@ static inline p4dval_t native_p4d_val(p4d_t p4d)
 }
 #endif
 ```
-[Source](https://elixir.bootlin.com/linux/v4.19.50/source/arch/x86/include/asm/pgtable_types.h#L321)
+[x86 Source](https://elixir.bootlin.com/linux/v5.10.57/source/arch/x86/include/asm/pgtable_types.h#L332)
 
 Interesting. Looking at `pgtable-nop4d.h` we find that `p4d_t` is defined as
 ```
@@ -173,12 +173,14 @@ represented by `p4d_t`, essentially become a type alias for `pgd_t`. The kernel
 does this so that it has a standard 5-level page table interface to program
 against regardless of how many levels of page tables actually exist.
 
+As of writing, arm64 (for linux 5.10.57) directly includes `pgtable-nop4d.h`.
+
 To summarize, with 4-level paging there are no "real" p4d tables. Instead, pgd
 entries contain the addresses of pud tables, and the kernel "pretends" the p4d
 exists by making it appear that the p4d is a mirror copy of the pgd.
 
-If you read on in `pgtable_types.h` you'll see that the kernel uses the same
-scheme for 3 and 2 level page table configurations as well.
+If you read on in `arch/x86/include/asm/pgtable_types.h` you'll see that the kernel uses the same
+scheme for 3 and 2 level page table configurations as well. arm64 follows a similar scheme in `arch/arm64/include/asm/pgtable-types.h`
 
 NOTE that you cannot make use of this equivalence directly. Your Cabinet
 implementation must work correctly for any page table configuration and
@@ -219,19 +221,22 @@ A common source of confusion arises from a misunderstanding of what macros like 
 return. 
 
 ```C
-// From arch/x86/include/asm/pgtable.h
-
 /* Find an entry in the third-level page table.. */
+// From include/linux/pgtable.h. Note that this definition is shared between x86 and arm64.
 static inline pud_t *pud_offset(p4d_t *p4d, unsigned long address)
 {
-        return (pud_t *)p4d_page_vaddr(*p4d) + pud_index(address);
+	return (pud_t *)p4d_page_vaddr(*p4d) + pud_index(address);
 }
 
-// From arch/x86/include/asm/pgtable_types.h
+// x86: arch/x86/include/asm/pgtable_types.h
+// arm64: arch/arm64/include/asm/pgtable-types.h
 typedef struct { pudval_t pud; } pud_t;
 
-// From arch/x86/include/asm/pgtable_64_types.h
+// x86: arch/x86/include/asm/pgtable_64_types.h
 typedef unsigned long   pudval_t;
+
+// arm64: arch/arm64/include/asm/pgtable-types.h
+typedef u64 pudval_t;
 ```
 
 We touched on this briefly above. A `pud_t` is just a struct containing an
@@ -242,12 +247,16 @@ aligned. The macros that Gordman discusses, like `pte_none()` and
 `pmd_present()`, check these flag bits to determine information about the entry.
 
 If you want to recover the actual value of the entry, the type casting macros
-Gordman discussed in section 3.2 are useful. Keep in mind that if you want the
-physical address the entry points to you'll need to `&` the value with the
-correct mask, which varies depending on whether the entry points to a huge page
-or a normal page. Hint: the kernel provides macros that figure this out for you
-for each page table level that supports huge pages.
+Gordman discussed in section 3.2 are useful. Although the Gordman reading is x86-specific,
+arm64 defines similar, if not indentical, macros. Keep in mind that if you want the
+physical address the entry points to you'll need to bitwise-and the value with the
+correct mask.
 
+x86 and arm64 either define functions/macros for the mask so you can
+manually perform the bitwise-and or define function/macros that outright do the correct
+bitwise-and for you. Either way, recovering the physical address the entry points to is possible in
+both x86 and arm64, it just may look slightly different depending which architecture you're on and
+which function/macros you choose.
 
 ### Page dirty and refcount
 Recall from before that a flag in the page table entry indicates whether the
@@ -257,7 +266,7 @@ a macro for this purpose.
 You will find section 3.4 of Gordman useful for figuring out how to retrieve
 the refcount of a page frame. Hint: every physical frame has a `struct page` in
 the kernel, which is defined
-[here](https://elixir.bootlin.com/linux/v4.19.50/source/include/linux/mm_types.h).
+[here](https://elixir.bootlin.com/linux/v5.10.57/source/include/linux/mm_types.h#L70).
 Be sure to use the correct kernel functions / macros to access any information
 in `struct page`.
 
