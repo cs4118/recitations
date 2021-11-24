@@ -32,10 +32,11 @@ page table.
 [Source](https://os.phil-opp.com/page-tables)
 
 This diagram shows how the bits of a 64 bit virtual address specify the indices
-into a 4-level page table. With 4-level paging only bits 0 through 47 are
-used. Bits 48 through 63 are sign extension bits that must match bit 47; this
-prevents clever developers from stuffing extra information into addresses that
-might interfere with future addressing schemes, like 5-level page tables.
+into a 4-level x86 page table (you can expect something similar in arm64).
+With 4-level paging only bits 0 through 47 are used. Bits 48 through 63 are sign
+extension bits that must match bit 47; this prevents clever developers from
+stuffing extra information into addresses that might interfere with future addressing
+schemes, like 5-level page tables.
 
 As you can see, there are 9 bits specifying the index into each page table and a
 12 bit offset into the physical page frame. Since 2^9 = 512, each level of the
