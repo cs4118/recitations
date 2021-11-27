@@ -117,7 +117,7 @@ CONFIG_PGTABLE_LEVELS=4
 
 If we look at the [sample
 session](https://cs4118.github.io/cabinet/testing/session1.html)
-from the Cabinet prompt, it shows that the `pgd_paddr` and `p4d_paddr` are
+from the Cabinet prompt, it shows that the `p4d_paddr` and `pud_paddr` are
 identical.
 
 ```
