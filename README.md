@@ -11,5 +11,6 @@ Issues, patches, and comments, especially by current and former students, are we
 - [Note A](A-Workflow/workflow.md): VM/kernel workflow setup, Linux source code navigators  
 - [Note B](B-Sockets-ServerTesting): Sockets/TCP programming, server testing strategies
 - [Note C](C-Linux-Kernel-Dev/linux-kernel-dev.md): Kernel configuration, compilation, and style
-- [Note D](D-Freezer/freezer.md): Linux scheduler data structures, implementing a scheduler (hw6)
-- [Note E](E-Cabinet/index.md): Linux page table data structures, macros/functions (hw7)
+- [Note D](D-Fridge/waitqueue.pdf): Linux wait queue (hw5)
+- [Note E](E-Freezer/freezer.md): Linux scheduler data structures, implementing a scheduler (hw6)
+- [Note F](F-Cabinet/index.md): Linux page table data structures, macros/functions (hw7)
