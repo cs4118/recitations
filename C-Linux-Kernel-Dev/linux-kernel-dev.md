@@ -6,13 +6,15 @@ which goes over how to install a new kernel on your machine.
 Kernel Module Makefile
 ----------------------
 More info in our [kernel module guide](https://cs4118.github.io/dev-guides/linux-modules.html), but for the sake of comparison, here it is again:
-```
+
+```make
 obj-m += hello.o
 all:
     make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
 clean:
     make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
 ```
+
 This Makefile is separate from the top-level kernel source Makefile we're about to work with. Here, we're adding to the `obj-m` "goal definition" (build object as module) and using a specialized Makefile located at `/lib/modules/$(shell uname -r)/build` to link our module into the kernel.
 
 Top-level Kernel Makefile
@@ -31,8 +33,9 @@ with this Makefile.
 It's good practice to ensure you have a clean kernel source before beginning
 to development. Here's the cleaning options that this Makefile provides, as
 reported by `make help`:
+
 ```
-    Cleaning targets:
+Cleaning targets:
   clean       - Remove most generated files but keep the config and
                 enough build support to build external modules
   mrproper    - Remove all generated files + config + various backup files
@@ -42,7 +45,9 @@ reported by `make help`:
 `make mrproper` is usually sufficient for our purposes.
 Be warned that you'll have to completely rebuild the kernel
 after running this!
+
 ### Configuration and compilation
+
 `linux/.config` is the kernel's configuration file. It lists a bunch of
 options that determine the properties of the kernel you're
 about to build. It also determines what code will be
@@ -53,8 +58,9 @@ can provide multi-processing functionality.
 There's a bunch of different ways to generate this configuration file.
 Here's the relevant options we have, as reported by `make help` in the
 top-level kernel directory:
+
 ```
-    Configuration targets:
+Configuration targets:
   config          - Update current config utilising a line-oriented program
   menuconfig      - Update current config utilising a menu based program
   oldconfig       - Update current config utilising a provided .config as base
@@ -66,20 +72,24 @@ top-level kernel directory:
 
 Summarizing from our [compilation guide](https://cs4118.github.io/dev-guides/debian-kernel-compilation.html), we set up our kernel config in a couple of
 steps:
+
 ```
 make olddefconfig # Use current kernel's .config + ARCH defaults
 make menuconfig   # Manually edit some configs
 ```
+
 If you want to **significantly** reduce your build time, you can also set
 your config to skip unloaded modules during compilation:
-```
+
+```sh
 yes '' | make localmodconfig
 ```
 
 As you're developing in the kernel, you might add additional source files that need to be compiled and linked in. Open up
 the directory's Makefile and add your desired object file to
 the `obj-y` goal definition, which is for "built-in" functionality (as opposed to kernel modules). For example, here's the relevant portion of `linux/kernel/Makefile`:
-```
+
+```make
 obj-y     = fork.o exec_domain.o panic.o \
 	    cpu.o exit.o softirq.o resource.o \
 	    sysctl.o sysctl_binary.o capability.o ptrace.o user.o \
@@ -89,21 +99,26 @@ obj-y     = fork.o exec_domain.o panic.o \
 	    notifier.o ksysfs.o cred.o reboot.o \
 	    async.o range.o smpboot.o ucount.o
 ```
+
 If you were adding a source file to `linux/kernel`, you'd add the object file target here.
 
 
 Once you're ready to compile your kernel, you run the following in the top-level source directory:
-```
+
+```sh
 make -j $(nproc)
 ```
+
 This will compile your kernel across all available CPUs, as reported by `nproc`. Note that this top-level Makefile will
 recursively build source code in subdirectories for you!
 ### Kernel installation
 Like in our [compilation guide](https://cs4118.github.io/dev-guides/debian-kernel-compilation.html), you run the following command once
 the compilation finishes:
-```
+
+```sh
 sudo make modules_install && sudo make install
 ```
+
 The first time you install a kernel, you must build `modules_install`.
 All subsequent times, `install` is sufficient.
 
