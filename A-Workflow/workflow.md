@@ -52,7 +52,7 @@ machine and disable the VM's graphical interface.
 Alternatively, you can setup an IDE to SSH into your VM. One option is using
 Visual Studio Code, which we've written up some
 [notes](https://cs4118.github.io/dev-guides/vm-ssh.html#using-visual-studio-code-optional)
-on how to use. This is nice alternative to command-line editors like vim/emacs
+on how to use. This is a nice alternative to command-line editors like vim/emacs
 if you're not familiar with them.
 
 ### Additional Tools
@@ -85,7 +85,7 @@ look for a symbol definition/use in the source-tree.
 ### Web Tools
 
 If you don't want to use `cscope`, there's an popular online kernel-source
-navigator: [bootlin](https://elixir.bootlin.com/linux/v5.10.57/source). Note
+navigator: [bootlin](https://elixir.bootlin.com/linux/v5.10.158/source). Note
 that kernel version matters when you're navigating code – be sure you select the
 correct version.
 
