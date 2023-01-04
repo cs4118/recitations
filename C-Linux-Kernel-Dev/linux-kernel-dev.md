@@ -149,14 +149,14 @@ finds in the codebase. You should get into the habit of running checkpatch and
 fixing what it suggests before major checkpoints.
 
 If you want a general overview of kernel code style, here's
-[one](https://www.kernel.org/doc/html/v4.19/process/coding-style.html). You can
+[one](https://www.kernel.org/doc/html/v5.10/process/coding-style.html). You can
 also find this in `linux/Documentation/process/coding-style.rst`.
 
 Debugging Techniques
 --------------------
 
 - Take
-  [snapshots](https://docs.oracle.com/en/virtualization/virtualbox/6.0/user/snapshots.html)
+  [snapshots](https://docs.vmware.com/en/VMware-Fusion/12/com.vmware.fusion.using.doc/GUID-4C90933D-A31F-4A56-B5CA-58D3AE6E93CF.html)
   of your VM before installing software that may corrupt it.
 - Use `printk/pr_info` to log messages to the kernel log buffer (viewable in
   userspace with by running `sudo dmesg`)
