@@ -2,35 +2,56 @@
 
 ## Introduction
 
-One of the reasons students struggle with this assignment boils down to a lack of understanding of how the scheduler works. In this guide, I hope to provide you with a clear understanding of how the Linux scheduler pieces fit together. I hope to paint a picture that you can use to implement the freezer scheduler.
+One of the reasons students struggle with this assignment boils down to a lack
+of understanding of how the scheduler works. In this guide, I hope to provide
+you with a clear understanding of how the Linux scheduler pieces fit together. I
+hope to paint a picture that you can use to implement the freezer scheduler.
 
 ## The `task_struct`
 
-Recall from HW1 that in Linux, every process is defined by its `struct task_struct`. When you have multiple tasks forked off a common parent, they are linked together in a doubly linked-list `struct list_head siblings` embedded within the `task_struct`.
-For example, if you had four processes running on your system, each forked off one parent, it would look something like this (the parent is not shown):
+Recall from HW1 that in Linux, every process is defined by its `struct
+task_struct`. When you have multiple tasks forked off a common parent, they are
+linked together in a doubly linked-list `struct list_head siblings` embedded
+within the `task_struct`. For example, if you had four processes running on your
+system, each forked off one parent, it would look something like this (the
+parent is not shown):
 
 <div align='center'>
     <img src='./task_struct.png'/><br/>
 </div>
 
-However, at this stage, none of these processes are actually running on a CPU. In order to get them onto a CPU, I need to introduce you to the `struct rq`.
+However, at this stage, none of these processes are actually running on a CPU.
+In order to get them onto a CPU, I need to introduce you to the `struct rq`.
 
 ## The `struct_rq`
 
-The `struct rq` is a per-cpu run queue data structure. I like to think of it as the virtual CPU. It contains a lot of information (must of which goes way over my head), but it also includes the list of tasks that will (eventually) run on that CPU.
+The `struct rq` is a per-cpu run queue data structure. I like to think of it as
+the virtual CPU. It contains a lot of information (must of which goes way over
+my head), but it also includes the list of tasks that will (eventually) run on
+that CPU.
 
-A naive implementation would be to embed a `struct list_head runqueue_head` (for example) into the `struct rq`, and embed a `struct list_head node` into every `task_struct`.
+A naive implementation would be to embed a `struct list_head runqueue_head` (for
+example) into the `struct rq`, and embed a `struct list_head node` into every
+`task_struct`.
 
 <div align='center'>
     <img src='./naive.png'/><br/>
     This is a BAD implementation.
 </div>
 
-The main problem with this implementation is that it does not extend well. At this point, you know Linux has more than one scheduling class. Linux comes built with a deadline class, a real-time class, and the primary CFS. Having a `list_head` embedded directly into the `struct rq` for each scheduling class is not feasible.
+The main problem with this implementation is that it does not extend well. At
+this point, you know Linux has more than one scheduling class. Linux comes built
+with a deadline class, a real-time class, and the primary CFS. Having a
+`list_head` embedded directly into the `struct rq` for each scheduling class is
+not feasible.
 
-The solution is to create a new structure containing the `list_head` and any bookkeeping variables. Then, we can include just the wrapper structure in the `struct rq`. Linux includes these structures in `linux/kernel/sched/sched.h`.
+The solution is to create a new structure containing the `list_head` and any
+bookkeeping variables. Then, we can include just the wrapper structure in the
+`struct rq`. Linux includes these structures in `linux/kernel/sched/sched.h`.
 
-By convention, Linux scheduler-specific wrapper structures are named `struct <sched_class>_rq`. For example, the CFS class defines a `struct cfs_rq` which is then declared inside of `struct rq` as `struct cfs_rq cfs`.
+By convention, Linux scheduler-specific wrapper structures are named `struct
+<sched_class>_rq`. For example, the CFS class defines a `struct cfs_rq` which is
+then declared inside of `struct rq` as `struct cfs_rq cfs`.
 
 The following snippet is taken from `linux/kernel/sched/sched.h`:
 
@@ -54,13 +75,24 @@ struct rq {
 
 ## The `freezer_rq`
 
-At this point, you've probably guessed that you will need to do the same thing for freezer. You are right. The `freezer_rq` should include the head of the freezer runqueue. Additionally, you may need to include some bookkeeping variables. Think of what you would actually need and don't add anything extra (it should be pretty simple).
+At this point, you've probably guessed that you will need to do the same thing
+for freezer. You are right. The `freezer_rq` should include the head of the
+freezer runqueue. Additionally, you may need to include some bookkeeping
+variables. Think of what you would actually need and don't add anything extra
+(it should be pretty simple).
 
 ## The `sched_freezer_entity`
 
-Now that you have the `struct rq` setup, you need to have some mechanism to join your `task_struct`s into the queue. Here, too, you can't just include a `list_head node` to add a task onto the scheduler-specific runqueue because you'll need additional bookkeeping. As you have probably guessed, we are going to wrap the list_head and all the bookkeeping variables into their own struct.
+Now that you have the `struct rq` setup, you need to have some mechanism to join
+your `task_struct`s into the queue. Here, too, you can't just include a
+`list_head node` to add a task onto the scheduler-specific runqueue because
+you'll need additional bookkeeping. As you have probably guessed, we are going
+to wrap the list_head and all the bookkeeping variables into their own struct.
 
-In Linux, we name these structs `sched_{class}_entity` (one exception is that CFS names this `sched_entity`). For example, the real-time scheduling class calls it `sched_rt_entity`. We will name ours `struct sched_freezer_entity`. Again, make sure you only include what you need in this struct.
+In Linux, we name these structs `sched_{class}_entity` (one exception is that
+CFS names this `sched_entity`). For example, the real-time scheduling class
+calls it `sched_rt_entity`. We will name ours `struct sched_freezer_entity`.
+Again, make sure you only include what you need in this struct.
 
 With all this setup, here is what the final picture looks like:
 
@@ -68,13 +100,22 @@ With all this setup, here is what the final picture looks like:
     <img src='./freezer.png'/><br/>
 </div>
 
-In the picture above, the two structs on the far left represent a system with two CPUs. I colored these blue and green to distinguish them from each other, and to show that different `task_structs` linked on one `siblings` linked-list can run on separate CPUs.
+In the picture above, the two structs on the far left represent a system with
+two CPUs. I colored these blue and green to distinguish them from each other,
+and to show that different `task_structs` linked on one `siblings` linked-list
+can run on separate CPUs.
 
 ## The `sched_class`
 
-At this point, we have set up the data structures, but we are still not done. We now need to implement the freezer functionality to let the kernel use freezer as a scheduler.
+At this point, we have set up the data structures, but we are still not done. We
+now need to implement the freezer functionality to let the kernel use freezer as
+a scheduler.
 
-Think about this situation: Say we have a CFS task about to return from main(). The OS needs to call CFS `dequeue_task()` to remove it from the CFS queue. How can we ensure that the OS will call the CFS implementation of `dequeue_task()`? The answer is `struct sched_class`, defined in `linux/kernel/sched/sched.h`. Here is what the structure looks like:
+Think about this situation: Say we have a CFS task about to return from main().
+The OS needs to call CFS `dequeue_task()` to remove it from the CFS queue. How
+can we ensure that the OS will call the CFS implementation of `dequeue_task()`?
+The answer is `struct sched_class`, defined in `linux/kernel/sched/sched.h`.
+Here is what the structure looks like:
 
 ```c
 struct sched_class {
@@ -137,7 +178,10 @@ struct sched_class {
 } __aligned(STRUCT_ALIGNMENT); /* STRUCT_ALIGN(), vmlinux.lds.h */
 ```
 
-As you can see, `struct sched_class` contains many function pointers. When we add a new scheduling class, we create an instance of `struct sched_class` and set the function pointers to point to our implementation of these functions. If we look in the file `linux/kernel/sched/fair.c`, we see how CFS does it:
+As you can see, `struct sched_class` contains many function pointers. When we
+add a new scheduling class, we create an instance of `struct sched_class` and
+set the function pointers to point to our implementation of these functions. If
+we look in the file `linux/kernel/sched/fair.c`, we see how CFS does it:
 
 ```c
 const struct sched_class fair_sched_class
@@ -186,12 +230,33 @@ const struct sched_class fair_sched_class
 };
 ```
 
-Note that the dot notation is a C99 feature that allows you to set specific fields of the struct by name in an initializer. This notation is also called [designated initializers](http://gcc.gnu.org/onlinedocs/gcc/Designated-Inits.html). Also, not every function needs to be implemented. You will need to figure out what is and is not necessary. To see an example of a bare minimum scheduler, see the [idle_sched_class](https://elixir.bootlin.com/linux/v5.10.57/source/kernel/sched/idle.c#L487), which is the scheduling policy used when no other tasks are ready to be executed.
+Note that the dot notation is a C99 feature that allows you to set specific
+fields of the struct by name in an initializer. This notation is also called
+[designated
+initializers](http://gcc.gnu.org/onlinedocs/gcc/Designated-Inits.html). Also,
+not every function needs to be implemented. You will need to figure out what is
+and is not necessary. To see an example of a bare minimum scheduler, see the
+[idle_sched_class](https://elixir.bootlin.com/linux/v5.10.57/source/kernel/sched/idle.c#L487),
+which is the scheduling policy used when no other tasks are ready to be
+executed.
 
-As you can see, CFS initializes the `struct sched_class` function pointers to the CFS implementation. Two things of note here. First, the convention is to name the struct `<class_name>_sched_class`, so CFS names it `fair_sched_class`. Second, we name a particular class's functions as `<function_name>_<class_name>`. For example, the CFS implementation of `enqueue_task` as `enqueue_task_fair`. Now, every time the kernel needs to call a function, it can simply call `p->sched_class-><function()>`. Here, `p` is of the type `task_struct *`, `sched_class` is a pointer within the `task_struct` pointing to an instance of `struct sched_class`, and the `<function()>` points to the specific implementaion of the the function to be called.
+As you can see, CFS initializes the `struct sched_class` function pointers to
+the CFS implementation. Two things of note here. First, the convention is to
+name the struct `<class_name>_sched_class`, so CFS names it `fair_sched_class`.
+Second, we name a particular class's functions as
+`<function_name>_<class_name>`. For example, the CFS implementation of
+`enqueue_task` as `enqueue_task_fair`. Now, every time the kernel needs to call
+a function, it can simply call `p->sched_class-><function()>`. Here, `p` is of
+the type `task_struct *`, `sched_class` is a pointer within the `task_struct`
+pointing to an instance of `struct sched_class`, and the `<function()>` points
+to the specific implementaion of the the function to be called.
 
-One final thing: you may have noticed the `__section("__fair_sched_class")` macro in the declaration of`struct sched_class fair_sched_class`.
-When building the kernel, this allows the linker to align the `sched_class`'s contiguously in memory through the use of a linker script. A linker script describes how various sections in the input (source) files should be mapped into the output (binary/object) file, and to control the memory layout of the output file.
+One final thing: you may have noticed the `__section("__fair_sched_class")`
+macro in the declaration of`struct sched_class fair_sched_class`. When building
+the kernel, this allows the linker to align the `sched_class`'s contiguously in
+memory through the use of a linker script. A linker script describes how various
+sections in the input (source) files should be mapped into the output
+(binary/object) file, and to control the memory layout of the output file.
 
 We can see this in `linux/include/asm-generic/vmlinux.lds.h`:
 
@@ -212,7 +277,13 @@ We can see this in `linux/include/asm-generic/vmlinux.lds.h`:
 	__end_sched_classes = .;
 ```
 
-This effectively allows the kernel to treat the `sched_class` structs as part of an array of `sched_class`'s. The first class in the array is of lower priority than the second. In other words, `sched_class_dl` has a higher priority than `sched_class_rt`. Now, every time a new process needs to be scheduled, the kernel can simply go through the class array and check if there is a process of that class that needs to run. Let's take a look at this in practice as implemented in `linux\kernel\sched\core.c`.
+This effectively allows the kernel to treat the `sched_class` structs as part of
+an array of `sched_class`'s. The first class in the array is of lower priority
+than the second. In other words, `sched_class_dl` has a higher priority than
+`sched_class_rt`. Now, every time a new process needs to be scheduled, the
+kernel can simply go through the class array and check if there is a process of
+that class that needs to run. Let's take a look at this in practice as
+implemented in `linux\kernel\sched\core.c`.
 
 ```c
 
@@ -235,8 +306,9 @@ pick_next_task(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
 }
 ```
 
-This makes use of the `for_each_class()` macro, which takes advantage of the array structure of the `sched_class`'s.
-We can see this implementation in `linux/kernel/sched/sched.h`:
+This makes use of the `for_each_class()` macro, which takes advantage of the
+array structure of the `sched_class`'s. We can see this implementation in
+`linux/kernel/sched/sched.h`:
 
 ```c
 /* Defined in include/asm-generic/vmlinux.lds.h */
@@ -253,4 +325,11 @@ extern struct sched_class __end_sched_classes[];
 	for_class_range(class, sched_class_highest, sched_class_lowest)
 ```
 
-Essentially, when a process wants to relinquish its time on a CPU, `schedule()` gets called. Following the chain of calls in the kernel, `pick_next_task()` eventually gets called, and the OS will loop through each scheduling class by calling `for_each_class(class)`. Here, we call the `pick_next_task()` function of a particular instance of `struct sched_class`. If `pick_next_task()` returns `NULL`, the kernel will simply move on to the next class. If the kernel reaches the lowest priority class on the list (i.e. `idle_sched_class`) then there are no tasks to run and the CPU will go into idle mode.
+Essentially, when a process wants to relinquish its time on a CPU, `schedule()`
+gets called. Following the chain of calls in the kernel, `pick_next_task()`
+eventually gets called, and the OS will loop through each scheduling class by
+calling `for_each_class(class)`. Here, we call the `pick_next_task()` function
+of a particular instance of `struct sched_class`. If `pick_next_task()` returns
+`NULL`, the kernel will simply move on to the next class. If the kernel reaches
+the lowest priority class on the list (i.e. `idle_sched_class`) then there are
+no tasks to run and the CPU will go into idle mode.
