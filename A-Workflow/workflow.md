@@ -50,10 +50,9 @@ for. This is a good option if you want to conserve processing power on your host
 machine and disable the VM's graphical interface. 
 
 Alternatively, you can setup an IDE to SSH into your VM. One option is using
-Visual Studio Code, which we've written up some
-[notes](https://cs4118.github.io/dev-guides/vm-ssh.html#using-visual-studio-code-optional)
-on how to use. This is a nice alternative to command-line editors like vim/emacs
-if you're not familiar with them.
+Visual Studio Code, which we've written up some notes (below) on how to use.
+This is a nice alternative to command-line editors like vim/emacs if you're
+not familiar with them.
 
 ### Additional Tools
 If you do decide to work in a command-line environment, here are some tools
