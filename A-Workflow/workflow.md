@@ -71,16 +71,24 @@ we've used to streamline our workflow:
 Kernel Workflow
 ---------------
 
-### `vim` Enhancements
+### Editor enhancements
 
-Before getting into hw4/supermom, please read through our [kernel developer
-workflow](https://cs4118.github.io/dev-guides/kernel-workflow.html) guide. Here,
-we offer a bunch of cool `vim` additions/tricks to help you develop more
-efficiently while working on the kernel assignments. Note that this guide is
-only relevant if you intend to work on the command-line using `vim`. One notable
-mention here is `cscope`. This is a kernel-source navigator that works directly
-in your terminal/vim session. This is far more powerful than using `grep` to
-look for a symbol definition/use in the source-tree.
+Before getting into hw4/supermom, please read through one of our kernel developer
+workflow guides. These explain how to set up either `vim` or VSCode for kernel
+development.
+
+- [Vim workflow](https://cs4118.github.io/dev-guides/vim-workflow.html): Here,
+  we offer a bunch of cool `vim` additions/tricks to help you develop more
+  efficiently while working on the kernel assignments. Note that this guide is
+  only relevant if you intend to work on the command-line using `vim`. One notable
+  mention here is `cscope`. This is a kernel-source navigator that works directly
+  in your terminal/vim session. This is far more powerful than using `grep` to
+  look for a symbol definition/use in the source-tree.
+- [VSCode workflow](https://cs4118.github.io/dev-guides/vscode-workflow.html):
+  In this guide, we explain how to configure autocomplete, formatting, and
+  various other features for working on the kernel while using VSCode. VSCode
+  is a very powerful editor, and being able to take advantage of its functionality
+  will make your life much easier.
 
 ### Web Tools
 
