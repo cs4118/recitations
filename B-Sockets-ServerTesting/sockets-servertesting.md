@@ -13,22 +13,6 @@ Sockets have:
 
 An IP address and port number are both required in order for a computer to communicate with a specific process on a remote computer. Think about would happen if a port number wasn't necessary.
 
-### Simple socket communication
-A simple way to demonstrate the bidirectional and network-based communcation of sockets is with `netcat`. `netcat` is a bare-bones program to send streams of binary data over the network.
-
-Imagine we have two computers that can communicate over the internet, with the IP addresses `clac.cs.columbia.edu` and `clorp.cs.nyu.edu`.
-
-Connecting two socket endpoints to each other is not a symmetrical process. One socket needs to recieve connections on a specific port number, and the other socket needs to connect to that socket with the port number it specified. In `netcat`, the fist part happens through the `-l` flag as such:
-```bash
-joy@clac.cs.columbia.edu:~$ nc -l 10000
-```
-
-The `netcat` program on `clac.cs.columbia.edu` will create a socket and wait for connections on the port 10000. On the other server:
-```bash
-jeremy@clorp.cs.nyu.edu:~$ nc clac.cs.columbia.edu 10000
-```
-Notice the differences between these two commands. The first command only requires a port number, and doesn't need to know the IP address of the other server. The second command requires knowledge of both the IP address -- what computer to connect to; and the port number -- which process to connect to on that computer. This asymmetry is what's known as the client-server model.
-
 ### The client-server model
 The two endpoints in a socket connection serve different roles. One end acts as a server: 
 - It tells the operating system that it should recieve incoming connections on a port number
@@ -40,6 +24,24 @@ The other end is a client:
  the port number
 
 After a client connects to a server, there is bidirectional communication between the two processes, often with I/O system calls such as `read()` and `write()`, or their wrappers `recv()` and `send()`. 
+
+### Simple socket communication
+A simple way to demonstrate the bidirectional and network-based communcation of sockets is with `netcat`. `netcat` is a bare-bones program to send streams of binary data over the network.
+
+Imagine we have two computers that can communicate over the internet, with the IP addresses `clac.cs.columbia.edu` and `clorp.cs.nyu.edu`.
+
+Because of the client-server model, connecting two socket endpoints to each other is not a symmetrical process. One socket needs to act as the server, while the other needs to act as a client You tell `netcat` to act as a server with the `-l` flag:
+```bash
+joy@clac.cs.columbia.edu:~$ nc -l 10000
+```
+
+The `netcat` program on `clac.cs.columbia.edu` will create a socket and wait for connections on the port 10000. To tell `netcat` to act as a client, you supply the IP address of the server and the port number of the socket listening on that server:
+```bash
+jeremy@clorp.cs.nyu.edu:~$ nc clac.cs.columbia.edu 10000
+```
+Notice the differences between these two commands. The first command only requires a port number, and doesn't need to know the IP address of the other computer. The second command requires knowledge of both the IP address -- what computer to connect to; and the port number -- which process to connect to on that computer. This asymmetry is the client-server model.
+
+After the client connects to the server, the server `netcat` process creates a new socket for bidirectional communicaiton. In `netcat`, after the two processes connect there is no functional difference between client and server. What you type on one end should be visible on the other. 
 
 ### Sockets API Summary
 ![](client-server.png)
