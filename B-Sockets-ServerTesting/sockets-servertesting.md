@@ -2,6 +2,65 @@ Sockets and Server Testing
 ===========================
 Sockets and HTTP
 ---------------------------
+### The client-server model
+- Server waits for incoming requests over the network from clients
+- e.g. Web browser & web server
+- C programs use the Sockets API
+
+### What is a socket?
+
+- End-point for interprocess communication over TCP/IP network
+- Socket is bound to an IP Address and a port number
+
+### Sockets API Summary
+**`socket()`**
+- Called by both the client and the server
+- On the server-side, a listening socket is created; a connected socket will be created later by `accept()`
+
+**`bind()`**
+- Usually called only by the server
+- Binds the listening socket to a specific port that should be known to the client
+
+**`listen()`**
+- Called only by the server
+- Sets up the listening socket to accept connections
+
+**`accept()`**
+- Called only by the server
+- By default blocks until a connection request arrives
+- Creates and returns a new socket for each client
+
+**Listening socket vs connected socket**
+
+**`send()` and `recv()`**
+- Called by both the client and server
+- Reads and writes to the other side
+- Message boundaries may not be preserved
+
+### HTTP 1.0
+- Client sends a **HTTP request** for a resource on the server
+- The server sends a **HTTP response**
+
+**HTTP request**
+- First line: method, request-URI, version
+    - Ex: "GET /index.html HTTP/1.0\r\n"
+- Followed by 0 or more headers
+    - Ex: "Host: www.google.com\r\n"
+- Followed by an empty line
+    - "\r\n"
+
+Example:
+
+**HTTP response**
+- First line: response status
+    - Success: "HTTP/1.0 200 OK\r\n"
+    - Failure: "HTTP/1.0 404 Not Found\r\n"
+- Followed by 0 or more response headers
+- Followed by an empty line
+- Followed by the content of the response
+    - Ex: image file or HTML file
+
+Example:
 
 Testing your multi-server
 ---------------------------
