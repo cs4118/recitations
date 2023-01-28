@@ -2,17 +2,47 @@ Sockets and Server Testing
 ===========================
 Sockets and HTTP
 ---------------------------
-### The client-server model
-- Server waits for incoming requests over the network from clients
-- e.g. Web browser & web server
-- C programs use the Sockets API
-
 ### What is a socket?
 
-- End-point for interprocess communication over TCP/IP network
-- Socket is bound to an IP Address and a port number
+A socket is a software construct used for many modes of communication between processes. The mode of communication that this recitation will focus on is network communication. In particular, stream sockets represent an endpoint for reliable, bidirectional connections such as TCP connections. This allows for two processes, on separate computers, to communicate over a TCP/IP network connection.
+
+Sockets have:
+- an IP address, to (typically) identify the computer that the socket endpoint belongs to
+- a port number, to identify which process running on the computer the socket endpoint belongs to
+- a protocol, such as TCP or UDP. TCP is for reliable transport, UDP is unreliable. HTTP/1.0 uses TCP.
+
+An IP address and port number are both required in order for a computer to communicate with a specific process on a remote computer. Think about would happen if a port number wasn't necessary.
+
+### Simple socket communication
+A simple way to demonstrate the bidirectional and network-based communcation of sockets is with `netcat`. `netcat` is a bare-bones program to send streams of binary data over the network.
+
+Imagine we have two computers that can communicate over the internet, with the IP addresses `clac.cs.columbia.edu` and `clorp.cs.nyu.edu`.
+
+Connecting two socket endpoints to each other is not a symmetrical process. One socket needs to recieve connections on a specific port number, and the other socket needs to connect to that socket with the port number it specified. In `netcat`, the fist part happens through the `-l` flag as such:
+```bash
+joy@clac.cs.columbia.edu:~$ nc -l 10000
+```
+
+The `netcat` program on `clac.cs.columbia.edu` will create a socket and wait for connections on the port 10000. On the other server:
+```bash
+jeremy@clorp.cs.nyu.edu:~$ nc clac.cs.columbia.edu 10000
+```
+Notice the differences between these two commands. The first command only requires a port number, and doesn't need to know the IP address of the other server. The second command requires knowledge of both the IP address -- what computer to connect to; and the port number -- which process to connect to on that computer. This asymmetry is what's known as the client-server model.
+
+### The client-server model
+The two endpoints in a socket connection serve different roles. One end acts as a server: 
+- It tells the operating system that it should recieve incoming connections on a port number
+- It waits for incoming connections
+- When it recieves a connection, it creates a *new socket* for each client which will be used for communication to that client
+
+The other end is a client:
+- It "connects" to the server using the server’s IP address and
+ the port number
+
+After a client connects to a server, there is bidirectional communication between the two processes, often with I/O system calls such as `read()` and `write()`, or their wrappers `recv()` and `send()`. 
 
 ### Sockets API Summary
+![](client-server.png)
 **`socket()`**
 - Called by both the client and the server
 - On the server-side, a listening socket is created; a connected socket will be created later by `accept()`
