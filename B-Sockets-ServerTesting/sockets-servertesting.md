@@ -69,11 +69,11 @@ Siege is a command-line tool that allows you to benchmark your webserver using l
 
 To install Siege, type the following command:
 
-`sudo apt install siege`
+```sudo apt install siege```
 
 To use siege with your webserver in HW3, run your server and test with the following command:
 
-`siege http://<hostname>:<port>/<url>`
+```siege http://<hostname>:<port>/<url>```
 
 This will run for an infinite amount of time. When you CTRL-C out of the command, a list of statistics will be outputted on your terminal.
 
