@@ -16,8 +16,7 @@ Sockets have:
   belongs to
 - a port number, to identify which process running on the computer the socket
   endpoint belongs to
-- a protocol, such as TCP (reliable) or UDP (unreliable). Stream sockets use
-  TCP
+- a protocol, such as TCP (reliable) or UDP (unreliable). Stream sockets use TCP
 
 An IP address and port number are both required in order for a computer to
 communicate with a specific process on a remote computer. 
@@ -28,8 +27,8 @@ a *server*:
 - It tells the operating system that it should receive incoming connections on a
   port number
 - It waits for incoming connections
-- When it receives a connection, it creates a *new socket* for each client, which
-  will then be used to communicate with that client
+- When it receives a connection, it creates a *new socket* for each client,
+  which will then be used to communicate with that client
 
 The other end is a *client*:
 - It "connects" to the server using the server’s IP address and the port number
@@ -56,8 +55,8 @@ joy@clac.cs.columbia.edu:~$ nc -l 10000
 ```
 
 The `netcat` program on `clac.cs.columbia.edu` will create a socket and wait for
-connections on port 10000. To tell `netcat` to act as a client, you supply
-the IP address of the server and the port number of the socket listening on that
+connections on port 10000. To tell `netcat` to act as a client, you supply the
+IP address of the server and the port number of the socket listening on that
 server:
 
 ```bash
@@ -67,8 +66,8 @@ jeremy@clorp.cs.nyu.edu:~$ nc clac.cs.columbia.edu 10000
 Notice the differences between these two commands. The first command only
 requires a port number, and doesn't require the IP address of the other
 computer. The second command requires knowledge of both the IP address (what
-computer to connect to) and the port number (which process to connect to on
-that computer). This asymmetry is the client-server model.
+computer to connect to) and the port number (which process to connect to on that
+computer). This asymmetry is the client-server model.
 
 After the client connects to the server, the server `netcat` process creates a
 new socket for bidirectional communicaiton. After the two processes connect
@@ -77,7 +76,7 @@ one end should be visible on the other -- a full duplex stream of data.
 
 ### Sockets API Summary
 
-![](client-server.png) 
+![](img/client-server.png) 
 
 **`socket()`**
 - Called by both the client and the server
@@ -139,9 +138,9 @@ for (;;) {
 
 **Listening socket vs connected socket** 
 
-![](listening-vs-connecting.png) 
-To
-form a bidirectional channel between client and server, three sockets are used:
+![](img/listening-vs-connecting.png)
+
+To form a bidirectional channel between client and server, three sockets are used:
 - The server uses two sockets
   - The listening socket, to accept incoming connections from a client
   - The client socket, which is created when an incoming connection has been
@@ -158,13 +157,13 @@ the HTTP protocol and simpler than newer versions.
 
 When visiting a website, a URL is specified in the following format:
 ```
- http://example.com:80/index.html
- ^^^^   ^^^^^^^^^^^ ^^ ^^^^^^^^^^
- |      |           |  |
- |      |           |  URI = /index.html
- |      |           port number = 80
- |      domain name = example.com
- protocol = HTTP
+http://example.com:80/index.html
+^^^^   ^^^^^^^^^^^ ^^ ^^^^^^^^^^
+|      |           |  |
+|      |           |  URI = /index.html
+|      |           port number = 80
+|      domain name = example.com
+protocol = HTTP
 ```
 Based on the information provided by the user in the URL, a web client will
 establish a socket connection with the IP address of the domain name. After
@@ -191,17 +190,19 @@ requests:
 - Followed by the content of the response
     - Ex: image file or HTML file
 
-We can see the contents of real HTTP requests using `netcat` by pretending to be either a web client or server. 
+We can see the contents of real HTTP requests using `netcat` by pretending to be
+either a web client or server. 
 
-Let's first act as a web server. We tell `netcat` to open a server
-connection with `nc -l 10000`, and then in a web browser navigate to the URL with the domain name of this server. We can use the domain name `localhost` to specify
+Let's first act as a web server. We tell `netcat` to open a server connection
+with `nc -l 10000`, and then in a web browser navigate to the URL with the
+domain name of this server. We can use the domain name `localhost` to specify
 the local computer rather than connecting to a remote computer over the
 internet. In Chrome, we'll navigate to the URL
 `http://localhost:10000/index.html`. `netcat` outputs this:
 
 ```
 $ nc -l 10000
-GET /index.html HTTP/1.1   # GET == method; /index.html == request URI; HTTP/1.0 == version
+GET /index.html HTTP/1.1   # GET == method; /index.html == request URI; HTTP/1.1 == version
 Host: localhost:10000      # header
 Connection: keep-alive     # more headers...
 -removed for brevity-
@@ -212,7 +213,8 @@ To act as a client, we can type our HTTP request manually into netcat rather
 than doing it through the web browser. Here, we try to send an HTTP request to
 the domain name `example.com` on port `80` (the default for HTTP web servers)
 for the URI `/index.html`. Note that we specify the `-C` with `netcat` so that
-newlines are `\r\n` rather than `\n` -- a requirement of the HTTP protocol. This flag may vary depending on `netcat` version.
+newlines are `\r\n` rather than `\n` -- a requirement of the HTTP protocol. This
+flag may vary depending on `netcat` version.
 
 ```
 $ nc -C example.com 80
@@ -234,8 +236,8 @@ Testing your multi-server
 ---------------------------
 ### Siege
 Siege is a command-line tool that allows you to benchmark your webserver using
-load testing. Given a few parameters, Siege gives you information about the number of
-successful transactions to your website, percent availability, the
+load testing. Given a few parameters, Siege gives you information about the
+number of successful transactions to your website, percent availability, the
 latency/throughput of your server, and more.
 
 To install siege, run the following command:
@@ -247,8 +249,9 @@ following command:
 
 ```siege http://<hostname>:<port>/<url>```
 
-This will run for an infinite amount of time. When you <kbd>Ctrl</kbd>-<kbd>C</kbd>
-out of the command, a list of statistics will be outputted on your terminal.
+This will run for an infinite amount of time. When you
+<kbd>Ctrl</kbd>-<kbd>C</kbd> out of the command, a list of statistics will be
+outputted on your terminal.
 
 A better way to test with siege is using its options. The `-c` and `-r` options
 are particularly useful, as they allow you to specify the number of concurrent
