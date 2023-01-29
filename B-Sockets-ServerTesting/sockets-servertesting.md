@@ -244,14 +244,14 @@ latency/throughput of your server, and more.
 
 To install siege, run the following command:
 
-```console
+```
 sudo apt install siege
 ```
 
 To use siege with your webserver in HW3, run your server and test with the
 following command:
 
-```console
+```
 siege http://<hostname>:<port>/<url>
 ```
 
@@ -265,7 +265,7 @@ are particularly useful, as they allow you to specify the number of concurrent
 command will create 25 concurrent users that will each attempt to hit the server
 50 times, resulting in 1250 hit attempts:
 
-```console
+```
 siege -c 25 -r 50 http://<hostname>:<port>/<URI>
 ```
 
