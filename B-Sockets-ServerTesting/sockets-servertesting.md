@@ -239,8 +239,8 @@ following command:
 
 `siege http://<hostname>:<port>/<url>`
 
-This will run for an infinite amount of time. When you CTRL-C out of the
-command, a list of statistics will be outputted on your terminal.
+This will run for an infinite amount of time. When you <kbd>Ctrl</kbd>-<kbd>C</kbd>
+out of the command, a list of statistics will be outputted on your terminal.
 
 A better way to test with siege is using its options. The `-c` and `-r` options
 are particularly useful, as they allow you to specify the number of concurrent
