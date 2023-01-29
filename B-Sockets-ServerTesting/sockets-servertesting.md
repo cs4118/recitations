@@ -252,7 +252,7 @@ command will create 25 concurrent users that will each attempt to hit the server
 
 There are many other options, specified in the siege man page. These include
 `-t`, which specifies how long each user should run (as opposed to how many
-times), and `-f`, which specifies a file path that contains a list of urls to
+times), and `-f`, which specifies a file path that contains a list of URLs to
 test. 
 
 ### Additional guidance on testing/benchmarking
