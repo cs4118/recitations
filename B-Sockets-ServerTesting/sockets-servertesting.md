@@ -17,11 +17,10 @@ Sockets have:
 - a port number, to identify which process running on the computer the socket
   endpoint belongs to
 - a protocol, such as TCP (reliable) or UDP (unreliable). Stream sockets use
-  TCP.
+  TCP
 
 An IP address and port number are both required in order for a computer to
-communicate with a specific process on a remote computer. Think about would
-happen if a port number wasn't necessary.
+communicate with a specific process on a remote computer. 
 
 ### The client-server model
 The two endpoints in a socket connection serve different roles. One end acts as
