@@ -134,7 +134,7 @@ for (;;) {
 }
 ```
 
-**Listening socket vs connected socket** 
+### Listening socket vs connected socket
 ![](img/listening-vs-connecting.png)
 
 To form a bidirectional channel between client and server, three sockets are used:
