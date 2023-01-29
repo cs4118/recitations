@@ -3,7 +3,6 @@
 ## Sockets and HTTP
 
 ### What is a socket?
-
 A socket is a software construct used for many modes of communication between
 processes. The mode of communication that this recitation will focus on is
 network communication. In particular, stream sockets represent an endpoint for
@@ -75,7 +74,6 @@ there is no functional difference between client and server. What you type on
 one end should be visible on the other -- a full duplex stream of data. 
 
 ### Sockets API Summary
-
 ![](img/client-server.png) 
 
 **`socket()`**
@@ -137,7 +135,6 @@ for (;;) {
 ```
 
 **Listening socket vs connected socket** 
-
 ![](img/listening-vs-connecting.png)
 
 To form a bidirectional channel between client and server, three sockets are used:
@@ -147,8 +144,8 @@ To form a bidirectional channel between client and server, three sockets are use
     `accept()`ed. 
 - The client uses one socket
   - The `connect()`ing socket, which reaches out to the server. Once the
-connection has been made, communication can be done between the server's client
-socket and the client's connecting socket.
+  connection has been made, communication can be done between the server's client
+  socket and the client's connecting socket.
 
 ### HTTP 1.0
 HTTP 1.0 is a protocol between a client, typically a web browser, and a server,
@@ -156,6 +153,7 @@ typically a web server hosting files such as HTML. It is an outdated version of
 the HTTP protocol and simpler than newer versions.
 
 When visiting a website, a URL is specified in the following format:
+
 ```
 http://example.com:80/index.html
 ^^^^   ^^^^^^^^^^^ ^^ ^^^^^^^^^^
@@ -165,6 +163,7 @@ http://example.com:80/index.html
 |      domain name = example.com
 protocol = HTTP
 ```
+
 Based on the information provided by the user in the URL, a web client will
 establish a socket connection with the IP address of the domain name. After
 establishing the connection, the two computers exchange text in the form of HTTP
@@ -200,7 +199,7 @@ the local computer rather than connecting to a remote computer over the
 internet. In Chrome, we'll navigate to the URL
 `http://localhost:10000/index.html`. `netcat` outputs this:
 
-```
+```console
 $ nc -l 10000
 GET /index.html HTTP/1.1   # GET == method; /index.html == request URI; HTTP/1.1 == version
 Host: localhost:10000      # header
@@ -216,7 +215,7 @@ for the URI `/index.html`. Note that we specify the `-C` with `netcat` so that
 newlines are `\r\n` rather than `\n` -- a requirement of the HTTP protocol. This
 flag may vary depending on `netcat` version.
 
-```
+```console
 $ nc -C example.com 80
 GET /index.html HTTP/1.0    # GET == method; /index.html == request URI; HTTP/1.1 == version
                             # blank line to specify end of request
@@ -232,8 +231,8 @@ Content-Type: text/html     # more headers...
 -removed for brevity-
 ```
 
-Testing your multi-server
----------------------------
+## Testing your multi-server
+
 ### Siege
 Siege is a command-line tool that allows you to benchmark your webserver using
 load testing. Given a few parameters, Siege gives you information about the
@@ -242,12 +241,16 @@ latency/throughput of your server, and more.
 
 To install siege, run the following command:
 
-```sudo apt install siege```
+```
+sudo apt install siege
+```
 
 To use siege with your webserver in HW3, run your server and test with the
 following command:
 
-```siege http://<hostname>:<port>/<url>```
+```
+siege http://<hostname>:<port>/<url>
+```
 
 This will run for an infinite amount of time. When you
 <kbd>Ctrl</kbd>-<kbd>C</kbd> out of the command, a list of statistics will be
@@ -267,7 +270,6 @@ times), and `-f`, which specifies a file path that contains a list of URLs to
 test. 
 
 ### Additional guidance on testing/benchmarking
-
 When grading, we're going to test your implementation using a mix of manual
 connections (e.g. using tools like netcat) and stress testers like siege.
 
