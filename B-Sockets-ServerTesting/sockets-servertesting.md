@@ -251,7 +251,7 @@ command will create 25 concurrent users that will each attempt to hit the server
 `siege -c 25 -r 50 http://<hostname>:<port>/<URI>`
 
 There are many other options, specified in the siege man page. These include
-`-t`, which specifies how long each user should run (rather than how many
+`-t`, which specifies how long each user should run (as opposed to how many
 times), and `-f`, which specifies a file path that contains a list of urls to
 test. 
 
