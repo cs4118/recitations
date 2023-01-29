@@ -147,8 +147,7 @@ HTTP 1.0 is a protocol between a client, typically a web browser, and a server,
 typically a web server hosting files such as HTML. It is an outdated version of
 the HTTP protocol and simpler than newer versions.
 
-When we visit a website, we must specify its URL, which has the following
-format:
+When visiting a website, a URL is specified in the following format:
 ```
  http://example.com:80/index.html
  ^^^^   ^^^^^^^^^^^ ^^ ^^^^^^^^^^
