@@ -1,7 +1,7 @@
-Sockets and Server Testing
-===========================
-Sockets and HTTP
----------------------------
+# Sockets and Server Testing
+
+## Sockets and HTTP
+
 ### What is a socket?
 
 A socket is a software construct used for many modes of communication between
@@ -36,7 +36,7 @@ The other end is a *client*:
 
 After a client connects to a server, there is bidirectional communication
 between the two processes, often with I/O system calls such as `read()` and
-`write()`, or their socket-specific versions `recv()` and `send()`. 
+`write()`, or their socket-specific variants `recv()` and `send()`. 
 
 ### Sockets with netcat
 A simple way to demonstrate the bidirectional and network-based communcation of
@@ -50,22 +50,25 @@ Because of the client-server model, connecting two socket endpoints to each
 other is not a symmetrical process. One socket needs to act as the server, while
 the other needs to act as a client. You tell `netcat` to act as a server with
 the `-l` flag:
+
 ```bash
 joy@clac.cs.columbia.edu:~$ nc -l 10000
 ```
 
 The `netcat` program on `clac.cs.columbia.edu` will create a socket and wait for
-connections on the port 10000. To tell `netcat` to act as a client, you supply
+connections on port 10000. To tell `netcat` to act as a client, you supply
 the IP address of the server and the port number of the socket listening on that
 server:
+
 ```bash
 jeremy@clorp.cs.nyu.edu:~$ nc clac.cs.columbia.edu 10000
 ```
+
 Notice the differences between these two commands. The first command only
-requires a port number, and doesn't need to know the IP address of the other
-computer. The second command requires knowledge of both the IP address -- what
-computer to connect to; and the port number -- which process to connect to on
-that computer. This asymmetry is the client-server model.
+requires a port number, and doesn't require the IP address of the other
+computer. The second command requires knowledge of both the IP address (what
+computer to connect to) and the port number (which process to connect to on
+that computer). This asymmetry is the client-server model.
 
 After the client connects to the server, the server `netcat` process creates a
 new socket for bidirectional communicaiton. After the two processes connect
@@ -73,7 +76,10 @@ there is no functional difference between client and server. What you type on
 one end should be visible on the other -- a full duplex stream of data. 
 
 ### Sockets API Summary
-![](client-server.png) **`socket()`**
+
+![](client-server.png) 
+
+**`socket()`**
 - Called by both the client and the server
 - On the server-side, a listening socket is created; a connected socket will be
   created later by `accept()`
@@ -105,41 +111,45 @@ one end should be visible on the other -- a full duplex stream of data.
 
 A TCP client may use these functions as such:
 ```c
- int fd = socket(...);
- connect(fd, ... /* server address */);
+int fd = socket(...);
+connect(fd, ... /* server address */);
 
- // Communicate with the server by send()ing from and recv()ing to fd.
+// Communicate with the server by send()ing from and recv()ing to fd.
 
- close(fd);
+close(fd);
 ```
 
 And a TCP server:
-```c
- int serv_fd = socket(...);
- bind(serv_fd, ... /* server address */);
- listen(serv_fd, ... /* max pending connections */);
 
- // use an infinite loop, to continue accepting new incoming clients
- for (;;) {
+```c
+int serv_fd = socket(...);
+bind(serv_fd, ... /* server address */);
+listen(serv_fd, ... /* max pending connections */);
+
+// use an infinite loop, to continue accepting new incoming clients
+for (;;) {
     int clnt_fd = accept(serv_fd, ...);
 
     // Communicate with the client by send()ing from and recv()ing to
     // clnt_fd, NOT serv_fd.
 
     close(clnt_fd);
- }
+}
 ```
-**Listening socket vs connected socket** ![](listening-vs-connecting.png) To
+
+**Listening socket vs connected socket** 
+
+![](listening-vs-connecting.png) 
+To
 form a bidirectional channel between client and server, three sockets are used:
 - The server uses two sockets
   - The listening socket, to accept incoming connections from a client
   - The client socket, which is created when an incoming connection has been
     `accept()`ed. 
 - The client uses one socket
-  - The `connect()`ing socket, which reaches out to the server Once the
+  - The `connect()`ing socket, which reaches out to the server. Once the
 connection has been made, communication can be done between the server's client
 socket and the client's connecting socket.
-
 
 ### HTTP 1.0
 HTTP 1.0 is a protocol between a client, typically a web browser, and a server,
@@ -161,8 +171,8 @@ establish a socket connection with the IP address of the domain name. After
 establishing the connection, the two computers exchange text in the form of HTTP
 requests:
 
-- The lient sends a **HTTP request** for a resource on the server
-- The server sends a **HTTP response**
+- The client sends an **HTTP request** for a resource on the server
+- The server sends an **HTTP response**
 
 **HTTP request**
 - First line: method, request URI, version
@@ -181,16 +191,14 @@ requests:
 - Followed by the content of the response
     - Ex: image file or HTML file
 
-We can see examples of these two HTTP requests with `netcat`. Since both
-`netcat` and web servers/clients connect over sockets, we can pretend to be a
-web client or server and recieve the text that the opposing computer sends.
+We can see the contents of real HTTP requests using `netcat` by pretending to be either a web client or server. 
 
-Let's first act as a web server. We first tell `netcat` to open a server
-connection with `nc -l 10000`, and then in a web browser navigate to the URL
-that specifies this server. You can use the domain name `localhost` to specify
+Let's first act as a web server. We tell `netcat` to open a server
+connection with `nc -l 10000`, and then in a web browser navigate to the URL with the domain name of this server. We can use the domain name `localhost` to specify
 the local computer rather than connecting to a remote computer over the
-internet. In Chrome, I'll navigate to the URL
+internet. In Chrome, we'll navigate to the URL
 `http://localhost:10000/index.html`. `netcat` outputs this:
+
 ```
 $ nc -l 10000
 GET /index.html HTTP/1.1   # GET == method; /index.html == request URI; HTTP/1.0 == version
@@ -201,11 +209,11 @@ Connection: keep-alive     # more headers...
 ```
 
 To act as a client, we can type our HTTP request manually into netcat rather
-than doing it through the web browser. Here, I'll try to send an HTTP request to
+than doing it through the web browser. Here, we try to send an HTTP request to
 the domain name `example.com` on port `80` (the default for HTTP web servers)
-for the URI `/index.html`. Note that I specify the `-C` with `netcat` so that
-newlines are `\r\n` rather than `\n` -- a requirement of the HTTP protocol. This
-flag may be different depending on your operating system.
+for the URI `/index.html`. Note that we specify the `-C` with `netcat` so that
+newlines are `\r\n` rather than `\n` -- a requirement of the HTTP protocol. This flag may vary depending on `netcat` version.
+
 ```
 $ nc -C example.com 80
 GET /index.html HTTP/1.0    # GET == method; /index.html == request URI; HTTP/1.1 == version
@@ -215,7 +223,7 @@ Accept-Ranges: bytes        # header
 Content-Type: text/html     # more headers...
 -removed for brevity-
                             # blank newline to indicate end of headers and start of file contents
-<!doctype html>
+<!doctype html>             # HTML contents
 <html>
 <head>
     <title>Example Domain</title>
@@ -226,11 +234,11 @@ Testing your multi-server
 ---------------------------
 ### Siege
 Siege is a command-line tool that allows you to benchmark your webserver using
-load testing. Given a few parameters, Siege tells you things like the number of
-successful transactions to your website, percent availability, and
-latency/throughput of your server, 
+load testing. Given a few parameters, Siege gives you information about the number of
+successful transactions to your website, percent availability, the
+latency/throughput of your server, and more.
 
-To install siege, type the following command:
+To install siege, run the following command:
 
 ```sudo apt install siege```
 
