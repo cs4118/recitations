@@ -38,7 +38,7 @@ After a client connects to a server, there is bidirectional communication
 between the two processes, often with I/O system calls such as `read()` and
 `write()`, or their socket-specific versions `recv()` and `send()`. 
 
-### Simple socket communication
+### Sockets with netcat
 A simple way to demonstrate the bidirectional and network-based communcation of
 sockets is with `netcat`. `netcat` is a bare-bones program to send streams of
 binary data over the network.
@@ -101,6 +101,7 @@ one end should be visible on the other -- a full duplex stream of data.
 - Called by both the client and server
 - Reads and writes to the other side
 - Message boundaries may not be preserved
+- nearly the same as `write()` and `read()`, but with socket-specific options
 
 A TCP client may use these functions as such:
 ```c
@@ -138,7 +139,6 @@ form a bidirectional channel between client and server, three sockets are used:
   - The `connect()`ing socket, which reaches out to the server Once the
 connection has been made, communication can be done between the server's client
 socket and the client's connecting socket.
-
 
 
 ### HTTP 1.0
