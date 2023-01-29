@@ -286,8 +286,8 @@ is correct, as you can control exactly when connections start/terminate.
 
 Your server should be resilient to any client failure. `netcat` is a useful tool
 to test these kinds of failures, as you can simulate bad requests or
-disconnecting at various points during the transaction. Your server should be
-able to gracefully handle these scenarios -- under no condition should you
+disconnections at various points during the transaction. Your server should be
+able to gracefully handle these scenarios -- under no condition should your
 server crash because of a client failure.
 
 Once you've tested the basic functionality, use a stress tester to make sure
