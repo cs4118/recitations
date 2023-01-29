@@ -244,14 +244,14 @@ latency/throughput of your server, and more.
 
 To install siege, run the following command:
 
-```
+```console
 sudo apt install siege
 ```
 
 To use siege with your webserver in HW3, run your server and test with the
 following command:
 
-```
+```console
 siege http://<hostname>:<port>/<url>
 ```
 
@@ -265,7 +265,7 @@ are particularly useful, as they allow you to specify the number of concurrent
 command will create 25 concurrent users that will each attempt to hit the server
 50 times, resulting in 1250 hit attempts:
 
-```
+```console
 siege -c 25 -r 50 http://<hostname>:<port>/<URI>
 ```
 
@@ -307,3 +307,11 @@ compare the performance of the implementation of one part with another. However,
 since you are testing multi-server in a virtual machine, the performance isn’t
 guaranteed to be significantly better. As such, don’t worry too much about the
 benchmarking instructions - it’s not a hard and fast requirement.
+
+
+## Acknowledgements
+- Some examples were taken from John Hui's [Advanced
+  Programming](https://cs3157.github.io/www/2022-9/) lecture notes. We recommend
+  reading them on top of these recitation notes.
+  - [Lecture 13 - TCP/IP Networking](https://cs3157.github.io/www/2022-9/lecture-notes/13-tcp-ip.pdf)
+  - [Lecture 14 - HTTP](https://cs3157.github.io/www/2022-9/lecture-notes/14-http.pdf)
