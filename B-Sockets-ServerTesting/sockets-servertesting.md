@@ -28,8 +28,8 @@ a *server*:
 - It tells the operating system that it should receive incoming connections on a
   port number
 - It waits for incoming connections
-- When it recieves a connection, it creates a *new socket* for each client which
-  will be used for communication to that client
+- When it receives a connection, it creates a *new socket* for each client, which
+  will then be used to communicate with that client
 
 The other end is a *client*:
 - It "connects" to the server using the server’s IP address and the port number
