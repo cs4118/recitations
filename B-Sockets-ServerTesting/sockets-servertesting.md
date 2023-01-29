@@ -49,7 +49,7 @@ other is not a symmetrical process. One socket needs to act as the server, while
 the other needs to act as a client. You tell `netcat` to act as a server with
 the `-l` flag:
 
-```bash
+```console
 joy@clac.cs.columbia.edu:~$ nc -l 10000
 ```
 
@@ -58,7 +58,7 @@ connections on port 10000. To tell `netcat` to act as a client, you supply the
 IP address of the server and the port number of the socket listening on that
 server:
 
-```bash
+```console
 jeremy@clorp.cs.nyu.edu:~$ nc clac.cs.columbia.edu 10000
 ```
 
@@ -156,9 +156,9 @@ When visiting a website, a URL is specified in the following format:
 
 ```
 http://example.com:80/index.html
-^^^^   ^^^^^^^^^^^ ^^ ^^^^^^^^^^
-|      |           |  |
-|      |           |  URI = /index.html
+^^^^   ^^^^^^^^^^^ ^^^^^^^^^^^^^
+|      |           | |
+|      |           | URI = /index.html
 |      |           port number = 80
 |      domain name = example.com
 protocol = HTTP
@@ -186,11 +186,14 @@ requests:
     - Failure: "HTTP/1.0 404 Not Found\r\n"
 - Followed by 0 or more response headers
 - Followed by an empty line
+    - "\r\n"
 - Followed by the content of the response
     - Ex: image file or HTML file
 
 We can see the contents of real HTTP requests using `netcat` by pretending to be
-either a web client or server. 
+either a web client or server. Our client and server won't actually work, since
+they simply recieve the incoming request but do nothing to process the request
+or reply. 
 
 Let's first act as a web server. We tell `netcat` to open a server connection
 with `nc -l 10000`, and then in a web browser navigate to the URL with the
@@ -213,7 +216,7 @@ than doing it through the web browser. Here, we try to send an HTTP request to
 the domain name `example.com` on port `80` (the default for HTTP web servers)
 for the URI `/index.html`. Note that we specify the `-C` with `netcat` so that
 newlines are `\r\n` rather than `\n` -- a requirement of the HTTP protocol. This
-flag may vary depending on `netcat` version.
+flag may vary depending on `netcat` version -- check `man nc`.
 
 ```console
 $ nc -C example.com 80
@@ -262,7 +265,9 @@ are particularly useful, as they allow you to specify the number of concurrent
 command will create 25 concurrent users that will each attempt to hit the server
 50 times, resulting in 1250 hit attempts:
 
-`siege -c 25 -r 50 http://<hostname>:<port>/<URI>`
+```
+siege -c 25 -r 50 http://<hostname>:<port>/<URI>
+```
 
 There are many other options, specified in the siege man page. These include
 `-t`, which specifies how long each user should run (as opposed to how many
@@ -278,6 +283,12 @@ can indeed have more than 1 connection to the server at any given time. `netcat`
 is nice because it allows you to establish a connection and then prompts you for
 the data to send. You should also use `netcat` to test that your cleanup logic
 is correct, as you can control exactly when connections start/terminate.
+
+Your server should be resilient to any client failure. `netcat` is a useful tool
+to test these kinds of failures, as you can simulate bad requests or
+disconnecting at various points during the transaction. Your server should be
+able to gracefully handle these scenarios -- under no condition should you
+server crash because of a client failure.
 
 Once you've tested the basic functionality, use a stress tester to make sure
 that your server handles concurrent hoards of requests in a reasonable amount of
