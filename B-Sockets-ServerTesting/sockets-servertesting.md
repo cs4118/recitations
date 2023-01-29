@@ -98,12 +98,17 @@ one end should be visible on the other -- a full duplex stream of data.
 - Requires an IP address and port number to connect to
 - Attempt to establish connection by reaching out to server
 
+**`send()` and `recv()`**
+- Called by both the client and server
+- Reads and writes to the other side
+- Message boundaries may not be preserved
+
 A TCP client may use these functions as such:
 ```c
  int fd = socket(...);
  connect(fd, ... /* server address */);
 
- // Communicate with the server by read()ing from and write()ing to fd.
+ // Communicate with the server by send()ing from and recv()ing to fd.
 
  close(fd);
 ```
@@ -118,7 +123,7 @@ And a TCP server:
  for (;;) {
     int clnt_fd = accept(serv_fd, ...);
 
-    // Communicate with the client by read()ing from and write()ing to
+    // Communicate with the client by send()ing from and recv()ing to
     // clnt_fd, NOT serv_fd.
 
     close(clnt_fd);
@@ -136,10 +141,6 @@ connection has been made, communication can be done between the server's client
 socket and the client's connecting socket.
 
 
-**`send()` and `recv()`**
-- Called by both the client and server
-- Reads and writes to the other side
-- Message boundaries may not be preserved
 
 ### HTTP 1.0
 HTTP 1.0 is a protocol between a client, typically a web browser, and a server,
