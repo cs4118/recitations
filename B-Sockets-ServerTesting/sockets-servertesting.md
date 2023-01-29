@@ -25,7 +25,7 @@ communicate with a specific process on a remote computer.
 ### The client-server model
 The two endpoints in a socket connection serve different roles. One end acts as
 a *server*: 
-- It tells the operating system that it should recieve incoming connections on a
+- It tells the operating system that it should receive incoming connections on a
   port number
 - It waits for incoming connections
 - When it recieves a connection, it creates a *new socket* for each client which
