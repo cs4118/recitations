@@ -97,7 +97,7 @@ discussion for later.
 
 The scheduler is not really this simple; the runqueue is defined in the kernel
 as `struct rq`, and you can take a peek at it's definition
-[here](http://lxr.free-electrons.com/source/kernel/sched/sched.h#L581). Spoiler
+[here](https://elixir.bootlin.com/linux/v5.10.158/source/kernel/sched/sched.h#L897). Spoiler
 alert: it's not a linked list! To be fair, the explanation that I gave above
 more or less describes the very first Linux runqueue. But over the years, the
 scheduler evolved to incorporate multiple scheduling algorithms. These include:
@@ -142,25 +142,27 @@ to do most of the real work. Here is the portion relevant to us:
 ```c
 static void __sched notrace __schedule(bool preempt)
 {
-        struct task_struct *prev, *next;
+    struct task_struct *prev, *next;
 	unsigned long *switch_count;
 	struct rq *rq;
 
 	/* CODE OMMITTED */
 
-	next = pick_next_task(rq, prev, cookie);
+    next = pick_next_task(rq, prev, &rf);
 	clear_tsk_need_resched(prev);
 	clear_preempt_need_resched();
-	rq->clock_skip_update = 0;
 
-	if (likely(prev != next)) {
+    if (likely(prev != next)) {
 		rq->nr_switches++;
-		rq->curr = next;
+		RCU_INIT_POINTER(rq->curr, next);
 		++*switch_count;
 
+		psi_sched_switch(prev, next, !task_on_rq_queued(prev));
 		trace_sched_switch(preempt, prev, next);
-		rq = context_switch(rq, prev, next, cookie);
+		rq = context_switch(rq, prev, next, &rf);
 	}
+
+    /* CODE OMMITTED */
 }
 ```
 
@@ -197,23 +199,26 @@ shown below.
 
 ```c
 /*
-* Called from the timer interrupt handler to charge one tick to the current
-* process.  user_tick is 1 if the tick is user time, 0 for system.
-*/
+ * Called from the timer interrupt handler to charge one tick to the current
+ * process.  user_tick is 1 if the tick is user time, 0 for system.
+ */
 void update_process_times(int user_tick)
 {
 	struct task_struct *p = current;
 
+	PRANDOM_ADD_NOISE(jiffies, user_tick, p, 0);
+
 	/* Note: this timer irq context must be accounted for as well. */
 	account_process_tick(p, user_tick);
 	run_local_timers();
-	rcu_check_callbacks(user_tick);
+	rcu_sched_clock_irq(user_tick);
 #ifdef CONFIG_IRQ_WORK
 	if (in_irq())
-	irq_work_tick();
+		irq_work_tick();
 #endif
 	scheduler_tick();
-	run_posix_cpu_timers(p);
+	if (IS_ENABLED(CONFIG_POSIX_TIMERS))
+		run_posix_cpu_timers();
 }
 ```
 
@@ -269,36 +274,29 @@ below.
 
 ```c
 struct sched_class {
-	const struct sched_class *next;
+
+#ifdef CONFIG_UCLAMP_TASK
+	int uclamp_enabled;
+#endif
 
 	void (*enqueue_task) (struct rq *rq, struct task_struct *p, int flags);
 	void (*dequeue_task) (struct rq *rq, struct task_struct *p, int flags);
-	void (*yield_task) (struct rq *rq);
-	bool (*yield_to_task) (struct rq *rq, struct task_struct *p,
-			       bool preempt);
+	void (*yield_task)   (struct rq *rq);
+	bool (*yield_to_task)(struct rq *rq, struct task_struct *p);
 
-	void (*check_preempt_curr) (struct rq *rq, struct task_struct *p,
-				    int flags);
+	void (*check_preempt_curr)(struct rq *rq, struct task_struct *p, int flags);
 
-	/*
-	 * It is the responsibility of the pick_next_task() method that will
-	 * return the next task to call put_prev_task() on the @prev task or
-	 * something equivalent.
-	 *
-	 * May return RETRY_TASK when it finds a higher prio class has runnable
-	 * tasks.
-	 */
-	struct task_struct * (*pick_next_task) (struct rq *rq,
-						struct task_struct *prev,
-						struct pin_cookie cookie);
-	void (*put_prev_task) (struct rq *rq, struct task_struct *p);
+	struct task_struct *(*pick_next_task)(struct rq *rq);
+
+	void (*put_prev_task)(struct rq *rq, struct task_struct *p);
+	void (*set_next_task)(struct rq *rq, struct task_struct *p, bool first);
 
 #ifdef CONFIG_SMP
-	int  (*select_task_rq)(struct task_struct *p, int task_cpu, int sd_flag,
-			       int flags);
-	void (*migrate_task_rq)(struct task_struct *p);
+	int (*balance)(struct rq *rq, struct task_struct *prev, struct rq_flags *rf);
+	int  (*select_task_rq)(struct task_struct *p, int task_cpu, int sd_flag, int flags);
+	void (*migrate_task_rq)(struct task_struct *p, int new_cpu);
 
-	void (*task_woken) (struct rq *this_rq, struct task_struct *task);
+	void (*task_woken)(struct rq *this_rq, struct task_struct *task);
 
 	void (*set_cpus_allowed)(struct task_struct *p,
 				 const struct cpumask *newmask);
@@ -307,33 +305,32 @@ struct sched_class {
 	void (*rq_offline)(struct rq *rq);
 #endif
 
-	void (*set_curr_task) (struct rq *rq);
-	void (*task_tick) (struct rq *rq, struct task_struct *p, int queued);
-	void (*task_fork) (struct task_struct *p);
-	void (*task_dead) (struct task_struct *p);
+	void (*task_tick)(struct rq *rq, struct task_struct *p, int queued);
+	void (*task_fork)(struct task_struct *p);
+	void (*task_dead)(struct task_struct *p);
 
-        /*
+	/*
 	 * The switched_from() call is allowed to drop rq->lock, therefore we
 	 * cannot assume the switched_from/switched_to pair is serliazed by
 	 * rq->lock. They are however serialized by p->pi_lock.
 	 */
-	void (*switched_from) (struct rq *this_rq, struct task_struct *task);
-	void (*switched_to) (struct rq *this_rq, struct task_struct *task);
+	void (*switched_from)(struct rq *this_rq, struct task_struct *task);
+	void (*switched_to)  (struct rq *this_rq, struct task_struct *task);
 	void (*prio_changed) (struct rq *this_rq, struct task_struct *task,
 			      int oldprio);
 
-	unsigned int (*get_rr_interval) (struct rq *rq,
-					 struct task_struct *task);
+	unsigned int (*get_rr_interval)(struct rq *rq,
+					struct task_struct *task);
 
-	void (*update_curr) (struct rq *rq);
+	void (*update_curr)(struct rq *rq);
 
-#define TASK_SET_GROUP  0
-#define TASK_MOVE_GROUP 1
+#define TASK_SET_GROUP		0
+#define TASK_MOVE_GROUP		1
 
 #ifdef CONFIG_FAIR_GROUP_SCHED
-	void (*task_change_group) (struct task_struct *p, int type);
+	void (*task_change_group)(struct task_struct *p, int type);
 #endif
-};
+} __aligned(STRUCT_ALIGNMENT); /* STRUCT_ALIGN(), vmlinux.lds.h */
 ```
 
 # enqueue_task and dequeue_task
@@ -351,27 +348,27 @@ to be enqueued/dequeued, as well as the runqueue it should be added/removed
 from. In addition, these functions are given a bit vector of flags that
 describe *why* enqueue or dequeue is being called. Here are the various flags,
 which are described in
-[sched.h](http://lxr.free-electrons.com/source/kernel/sched/sched.h#L1181):
+[sched.h](https://elixir.bootlin.com/linux/v5.10.158/source/kernel/sched/sched.h#L1743):
 
 ```c
 /*
-* {de,en}queue flags:
-*
-* DEQUEUE_SLEEP  - task is no longer runnable
-* ENQUEUE_WAKEUP - task just became runnable
-*
-* SAVE/RESTORE - an otherwise spurious dequeue/enqueue, done to ensure tasks
-*                are in a known state which allows modification. Such pairs
-*                should preserve as much state as possible.
-*
-* MOVE - paired with SAVE/RESTORE, explicitly does not preserve the location
-*        in the runqueue.
-*
-* ENQUEUE_HEAD      - place at front of runqueue (tail if not specified)
-* ENQUEUE_REPLENISH - CBS (replenish runtime and postpone deadline)
-* ENQUEUE_MIGRATED  - the task was migrated during wakeup
-*
-*/
+ * {de,en}queue flags:
+ *
+ * DEQUEUE_SLEEP  - task is no longer runnable
+ * ENQUEUE_WAKEUP - task just became runnable
+ *
+ * SAVE/RESTORE - an otherwise spurious dequeue/enqueue, done to ensure tasks
+ *                are in a known state which allows modification. Such pairs
+ *                should preserve as much state as possible.
+ *
+ * MOVE - paired with SAVE/RESTORE, explicitly does not preserve the location
+ *        in the runqueue.
+ *
+ * ENQUEUE_HEAD      - place at front of runqueue (tail if not specified)
+ * ENQUEUE_REPLENISH - CBS (replenish runtime and postpone deadline)
+ * ENQUEUE_MIGRATED  - the task was migrated during wakeup
+ *
+ */
 ```
 
 The `flags` argument can be tested using the bitwise `&` operation. For example,
@@ -404,8 +401,8 @@ These functions are called for a variety of reasons:
 ```c
 /* Pick the task that should be currently running. */
 struct task_struct *pick_next_task (struct rq *rq,
-				    struct task_struct *prev,
-				    struct pin_cookie cookie);
+                                    struct task_struct *prev,
+                                    struct rq_flags *rf)
 ```
 
 `pick_next_task` is called by the core scheduler to determine which of rq's
@@ -435,10 +432,9 @@ the `put_prev_task` hook as an opportunity to put the currently running task
 (that is, the task specified by `p`) back in the RB tree.
 
 The sched_class's `put_prev_task` is called by the function `put_prev_task`, which
-is [defined](http://lxr.free-electrons.com/source/kernel/sched/sched.h#L1258) in sched.h.
+is [defined](https://elixir.bootlin.com/linux/v5.10.158/source/kernel/sched/sched.h#L1841) in sched.h.
 It seems a bit silly, but the sched_class's `pick_next_task` is expected to call
-`put_prev_task` by itself! This is documented in the following comment:
-
+`put_prev_task` by itself! This is documented in the following [comment](https://elixir.bootlin.com/linux/v4.9.330/source/kernel/sched/sched.h#L1241) in an earlier linux version:
 ```c
 /*
 * It is the responsibility of the pick_next_task() method that will
@@ -448,7 +444,7 @@ It seems a bit silly, but the sched_class's `pick_next_task` is expected to call
 ```
 
 Note that this was not the case in prior kernels; `put_prev_task` [used to be
-called](http://lxr.free-electrons.com/source/kernel/sched/core.c?v=3.11#L2445)
+called](https://elixir.bootlin.com/linux/v3.11/source/kernel/sched/core.c#L2445)
 by the core scheduler before it called `pick_next_task`.
 
 # task_tick
@@ -465,11 +461,11 @@ a timer interrupt happens, and its job is to perform bookeeping and set the `nee
 flag if the currently-running process needs to be preempted:
 
 The `need_resched` flag can be set by the function `resched_curr`,
-[found](http://lxr.free-electrons.com/source/kernel/sched/core.c#L481) in
+[found](https://elixir.bootlin.com/linux/v5.10.158/source/kernel/sched/core.c#L608) in
 core.c:
 
 ```c
-/* Mark rq's currently-running task to be rescheduled. */
+/* Mark rq's currently-running task 'to be rescheduled now'. */
 void resched_curr(struct rq *rq)
 ```
 
@@ -485,8 +481,8 @@ Note: in prior kernel versions, `resched_curr` used to be called `resched_task`.
 
 ```c
 /* Returns an integer corresponding to the CPU that this task should run on */
-int select_task_rq(struct task_struct *p, int task_cpu, int sd_flag, int flags);
-{% endhighlight%}
+int select_task_rq(struct task_struct *p, int cpu, int sd_flags, int wake_flags);
+```
 
 The core scheduler invokes this function to figure out which CPU to assign a task
 to. This is used for distributing processes accross multiple CPUs; the core
@@ -502,35 +498,17 @@ Here are some instances where `select_task_rq` is called:
   about to call exec.
   * And many more places...
 
-You can check *why* `select_task_rq` was called by looking at `sd_flag`. The possible
-values of the flag are enumerated in `sched.h`:
-
-```c
-#define SD_LOAD_BALANCE         0x0001  /* Do load balancing on this domain. */
-#define SD_BALANCE_NEWIDLE      0x0002  /* Balance when about to become idle */
-#define SD_BALANCE_EXEC         0x0004  /* Balance on exec */
-#define SD_BALANCE_FORK         0x0008  /* Balance on fork, clone */
-#define SD_BALANCE_WAKE         0x0010  /* Balance on wakeup */
-#define SD_WAKE_AFFINE          0x0020  /* Wake task to waking CPU */
-#define SD_SHARE_CPUCAPACITY    0x0080  /* Domain members share cpu power */
-#define SD_SHARE_POWERDOMAIN    0x0100  /* Domain members share power domain */
-#define SD_SHARE_PKG_RESOURCES  0x0200  /* Domain members share cpu pkg resources */
-#define SD_SERIALIZE            0x0400  /* Only a single load balancing instance */
-#define SD_ASYM_PACKING         0x0800  /* Place busy groups earlier in the domain */
-#define SD_PREFER_SIBLING       0x1000  /* Prefer to place tasks in a sibling domain */
-#define SD_OVERLAP              0x2000  /* sched_domains of this level overlap */
-#define SD_NUMA                 0x4000  /* cross-node balancing */
-```
+You can check *why* `select_task_rq` was called by looking at `sd_flag`.
 
 For instance, `sd_flag == SD_BALANCE_FORK` whenever `select_task_rq` is called to
 determine the CPU of a newly forked task.
 
 Note that `select_task_rq` should return a CPU that `p` is allowed to run on.
 Each `task_struct` has a
-[member](http://lxr.free-electrons.com/source/include/linux/sched.h#L1499)
-called `cpus_allowed`, of type `cpumask_t`. This member represents the task's
+[member](https://elixir.bootlin.com/linux/v5.10.158/source/include/linux/sched.h#L728)
+called `cpus_mask`, of type `cpumask_t`. This member represents the task's
 CPU affinity - i.e. which CPUs it can run on. It's possible to iterate over these
-CPUs with the macro `for_each_cpu`, defined [here](http://lxr.free-electrons.com/source/include/linux/cpumask.h#L216).
+CPUs with the macro `for_each_cpu`, defined [here](https://elixir.bootlin.com/linux/v5.10.158/source/include/linux/cpumask.h#L263).
 
 # set_curr_task
 ```c
