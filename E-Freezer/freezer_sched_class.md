@@ -1,12 +1,4 @@
----
-layout: post
-title:  "Linux Scheduler Series: Introduction"
-date:   2016-11-04 20:17:34
-categories: jekyll update
-series:  "The Linux Scheduler"
----
-
-{% include series.html %}
+# Linux Scheduler Series: Introduction
 
 ## Introduction
 I'm writing this series after TA-ing an operating systems class for two
@@ -47,15 +39,7 @@ number of hours reading, screaming at, and sobbing over kernel code. If I make
 a mistake, please point it out in the comments section, and I'll do my best to
 correct it.
 
----
-layout: post
-title:  "What is the Linux Scheduler?"
-date:   2016-11-04 20:17:34
-categories: jekyll update
-series:  "The Linux Scheduler"
----
-
-{% include series.html %}
+# What is the Linux Scheduler?
 
 ## Introduction
 In this post, I introduce the Linux scheduler, describe its job, and explain
@@ -106,11 +90,10 @@ runqueue, and a given process may appear on only one CPU's runqueue at a time.
 Processes CAN migrate between various CPUs' runqueues, but we'll save this
 discussion for later.
 
-<br/>
-![Simple Runqueue]({{ site.baseurl }}/assets/simple_runqueue/final_simple_runqueue.png)
-<center>Figure 1: An over-simplification of the runqueue</center>
-<br/>
-
+<div align='center'>
+    <img src='./final_simple_runqueue.png'/><br/>
+    Figure 1: An over-simplification of the runqueue
+</div>
 
 The scheduler is not really this simple; the runqueue is defined in the kernel
 as `struct rq`, and you can take a peek at it's definition
@@ -127,11 +110,11 @@ The modern-day runqueue is no longer a linked list but actually a collection of
 algorithm-specific runqueues corresponding to the list above. Indeed,
 `struct rq` has the following members:
 
-{% highlight c %}
+```c
 struct cfs_rq cfs;  // CFS scheduler runqueue
 struct rt_rq rt;    // Real-time scheduler runqueue
 struct dl_rq dl;    // Deadline scheduler runqueue
-{% endhighlight %}
+```
 
 Keep these details at the back of your mind so that you don't get bogged down.
 Remember: the goal here is to understand how the scheduler interoperates with
@@ -156,7 +139,7 @@ process and runs the next one on the CPU. This function is referred to by many
 texts as "the entrypoint into the scheduler". `schedule` invokes `__schedule`
 to do most of the real work. Here is the portion relevant to us:
 
-{% highlight c %}
+```c
 static void __sched notrace __schedule(bool preempt)
 {
         struct task_struct *prev, *next;
@@ -179,7 +162,7 @@ static void __sched notrace __schedule(bool preempt)
 		rq = context_switch(rq, prev, next, cookie);
 	}
 }
-{% endhighlight %}
+```
 
 The function `pick_next_task` looks at the runqueue `rq` and returns the
 `task_struct` associated with the process that should be run next. If we
@@ -196,12 +179,12 @@ waiting for an IO event or a lock. In this case, the kernel will call
 `schedule` on behalf of the process that needs to sleep. But what if the
 user-space program never sleeps? Here's one such program:
 
-{% highlight c %}
+```c
 int main()
 {
 	while(1);
 }
-{% endhighlight %}
+```
 
 If `schedule` were only called when a user-space program voluntarily sleeps,
 then programs like the one above would use up the processor indefinitely. Thus, we
@@ -212,7 +195,7 @@ interrupt fires periodically, allowing control to jump to the timer interrupt
 handler in the kernel. This handler calls the function `update_process_times`,
 shown below.
 
-{% highlight c %}
+```c
 /*
 * Called from the timer interrupt handler to charge one tick to the current
 * process.  user_tick is 1 if the tick is user time, 0 for system.
@@ -232,7 +215,7 @@ void update_process_times(int user_tick)
 	scheduler_tick();
 	run_posix_cpu_timers(p);
 }
-{% endhighlight %}
+```
 
 
 Notice how `update_process_times` invokes `scheduler_tick`. In
@@ -276,15 +259,7 @@ a large delay between when `need_resched` is set, and when `schedule` gets calle
 This concludes our exploration of how the kernel interfaces with the scheduler.
 Read on as we delve deeper into the scheduler's implementation!
 
----
-layout: post
-title:  "Understanding sched_class"
-date:   2016-11-24 20:17:34
-categories: jekyll update
-series:  "The Linux Scheduler"
----
-
-{% include series.html %}
+# Understanding sched_class
 
 ## Understanding sched_class
 I've skipped a bunch of stuff to get here because the scheduler assignment is
@@ -292,7 +267,7 @@ due soon. In this section, I will analyze `struct sched_class` and talk
 briefly about what each function does. I've reproduced `struct sched_class`
 below.
 
-{% highlight c %}
+```c
 struct sched_class {
 	const struct sched_class *next;
 
@@ -359,16 +334,16 @@ struct sched_class {
 	void (*task_change_group) (struct task_struct *p, int type);
 #endif
 };
-{% endhighlight %}
+```
 
 # enqueue_task and dequeue_task
-{% highlight c %}
+```c
 /* Called to enqueue task_struct p on runqueue rq. */
 void enqueue_task(struct rq *rq, struct task_struct *p, int flags);
 
 /* Called to dequeue task_struct p from runqueue rq. */
 void dequeue_task(struct rq *rq, struct task_struct *p, int flags);
-{% endhighlight %}
+```
 
 `enqueue_task` and `dequeue_task` are used to put a task on the runqueue and remove
 a task from the runqueue, respectively. Each of these functions are passed the task
@@ -378,7 +353,7 @@ describe *why* enqueue or dequeue is being called. Here are the various flags,
 which are described in
 [sched.h](http://lxr.free-electrons.com/source/kernel/sched/sched.h#L1181):
 
-{% highlight c %}
+```c
 /*
 * {de,en}queue flags:
 *
@@ -397,7 +372,7 @@ which are described in
 * ENQUEUE_MIGRATED  - the task was migrated during wakeup
 *
 */
-{% endhighlight %}
+```
 
 The `flags` argument can be tested using the bitwise `&` operation. For example,
 if the task was just migrated from another CPU, `flags & ENQUEUE_MIGRATED`
@@ -426,12 +401,12 @@ These functions are called for a variety of reasons:
 
 # pick_next_task
 
-{% highlight c %}
+```c
 /* Pick the task that should be currently running. */
 struct task_struct *pick_next_task (struct rq *rq,
 				    struct task_struct *prev,
 				    struct pin_cookie cookie);
-{% endhighlight %}
+```
 
 `pick_next_task` is called by the core scheduler to determine which of rq's
 tasks should be running. The name is a bit misleading. This function is not
@@ -445,10 +420,10 @@ returned by `pick_next_task`.
 
 # put_prev_task
 
-{% highlight c %}
+```c
 /* Called right before p is going to be taken off the CPU. */
 void put_prev_task(struct rq *rq, struct task_struct *p);
-{% endhighlight %}
+```
 
 `put_prev_task` is called whenever a task is to be taken off the CPU. The
 behavior of this function is up to the specific `sched_class`. Some schedulers
@@ -464,13 +439,13 @@ is [defined](http://lxr.free-electrons.com/source/kernel/sched/sched.h#L1258) in
 It seems a bit silly, but the sched_class's `pick_next_task` is expected to call
 `put_prev_task` by itself! This is documented in the following comment:
 
-{% highlight c %}
+```c
 /*
 * It is the responsibility of the pick_next_task() method that will
 * return the next task to call put_prev_task() on the @prev task or
 * something equivalent.
 */
-{% endhighlight %}
+```
 
 Note that this was not the case in prior kernels; `put_prev_task` [used to be
 called](http://lxr.free-electrons.com/source/kernel/sched/core.c?v=3.11#L2445)
@@ -478,12 +453,12 @@ by the core scheduler before it called `pick_next_task`.
 
 # task_tick
 
-{% highlight c %}
+```c
 /* Called from the timer interrupt handler. p is the currently running task
  * and rq is the runqueue that it's on.
  */
 void task_tick(struct rq *rq, struct task_struct *p, int queued);
-{% endhighlight %}
+```
 
 This is one of the most important scheduler functions. It is called whenever
 a timer interrupt happens, and its job is to perform bookeeping and set the `need_resched`
@@ -493,10 +468,10 @@ The `need_resched` flag can be set by the function `resched_curr`,
 [found](http://lxr.free-electrons.com/source/kernel/sched/core.c#L481) in
 core.c:
 
-{% highlight c %}
+```c
 /* Mark rq's currently-running task to be rescheduled. */
 void resched_curr(struct rq *rq)
-{% endhighlight %}
+```
 
 With SMP, there's a `need_resched` flag for every CPU. Thus, `resched_curr`
 might involve sending an APIC inter-processor interrupt to another processor
@@ -508,7 +483,7 @@ Note: in prior kernel versions, `resched_curr` used to be called `resched_task`.
 
 # select_task_rq
 
-{% highlight c %}
+```c
 /* Returns an integer corresponding to the CPU that this task should run on */
 int select_task_rq(struct task_struct *p, int task_cpu, int sd_flag, int flags);
 {% endhighlight%}
@@ -530,7 +505,7 @@ Here are some instances where `select_task_rq` is called:
 You can check *why* `select_task_rq` was called by looking at `sd_flag`. The possible
 values of the flag are enumerated in `sched.h`:
 
-{% highlight c %}
+```c
 #define SD_LOAD_BALANCE         0x0001  /* Do load balancing on this domain. */
 #define SD_BALANCE_NEWIDLE      0x0002  /* Balance when about to become idle */
 #define SD_BALANCE_EXEC         0x0004  /* Balance on exec */
@@ -545,7 +520,7 @@ values of the flag are enumerated in `sched.h`:
 #define SD_PREFER_SIBLING       0x1000  /* Prefer to place tasks in a sibling domain */
 #define SD_OVERLAP              0x2000  /* sched_domains of this level overlap */
 #define SD_NUMA                 0x4000  /* cross-node balancing */
-{% endhighlight %}
+```
 
 For instance, `sd_flag == SD_BALANCE_FORK` whenever `select_task_rq` is called to
 determine the CPU of a newly forked task.
@@ -558,7 +533,7 @@ CPU affinity - i.e. which CPUs it can run on. It's possible to iterate over thes
 CPUs with the macro `for_each_cpu`, defined [here](http://lxr.free-electrons.com/source/include/linux/cpumask.h#L216).
 
 # set_curr_task
-{% highlight c %}
+```c
 /* Called when a task changes its scheduling class or changes its task group. */
 void set_curr_task(struct rq *rq);
-{% endhighlight %}
+```
