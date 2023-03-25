@@ -564,12 +564,15 @@ Not relevant to freezer since freezer does not have priority.
 
 # switched_to
 ```c
-/* Called when a task got switched to this schuedling class. */
+/* Called when a task got switched to this scheduling class. */
 void switched_to(struct rq *rq, struct task_struct *p);
 ```
+For [rt](https://elixir.bootlin.com/linux/v5.10.158/source/kernel/sched/rt.c#L2303)
+and [dl](https://elixir.bootlin.com/linux/v5.10.158/source/kernel/sched/deadline.c#L2456),
+the main consideration is that switching a task into the rq could overload
+the runqueue. So there are efforts by the scheduling class to see whether is
+possible to push some tasks to other runqueues.
 
-
-# get_rr_interval
-```c
-unsigned int get_rr_interval(struct rq *rq, struct task_struct *p);
-```
+Though for lower priority sched classes like cfs and freezer, where overloading
+is not an issue, this just makes sure the task gets to run, and tries to preempt
+the current task if necessary.
