@@ -510,8 +510,60 @@ called `cpus_mask`, of type `cpumask_t`. This member represents the task's
 CPU affinity - i.e. which CPUs it can run on. It's possible to iterate over these
 CPUs with the macro `for_each_cpu`, defined [here](https://elixir.bootlin.com/linux/v5.10.158/source/include/linux/cpumask.h#L263).
 
-# set_curr_task
+# set_next_task
 ```c
 /* Called when a task changes its scheduling class or changes its task group. */
-void set_curr_task(struct rq *rq);
+void set_next_task(struct rq *rq, struct task_struct *p, bool first);
+```
+
+# yield_task
+```c
+void yield_task_freezer(struct rq *rq);
+```
+
+# check_preempt_curr
+```c
+/* Preempt the current task with a newly woken task if needed */
+void check_preempt_curr(struct rq *rq, struct task_struct *p, int flags)
+```
+When a new task entered the runnable state, this function is called to check if
+the task should preempty the currently running task. For instance, a new task
+is woken up with wake_up_new_task.
+
+Since freezer is not a preemptive scheduler, this method is irrevelant, but if
+you are curiou, you can see how the it is used in [core.c](https://elixir.bootlin.com/linux/v5.10.158/source/kernel/sched/core.c#L1693) and how the [rt](https://elixir.bootlin.com/linux/v5.10.158/source/kernel/sched/rt.c#L1562) scheduling class does it.
+
+
+# balance
+```c
+int balance(struct rq *rq, struct task_struct *prev, struct rq_flags *rf);
+```
+
+
+# update_curr
+```c
+/* Update the current task's runtime statistics.
+ */
+void update_curr(struct rq *rq);
+```
+This function updates the current task's stats such as total execution time and execution start time. It should skip the current tasks that are not in the scheduling class that this function is belonged to.
+
+# prio_changed
+```c
+/* Called when the task's priority has changed. */
+void prio_changed(struct rq *rq, struct task_struct *p, int oldprio)
+```
+Not relevant to freezer since freezer does not have priority.
+
+
+# switched_to
+```c
+/* Called when a task got switched to this schuedling class. */
+void switched_to(struct rq *rq, struct task_struct *p);
+```
+
+
+# get_rr_interval
+```c
+unsigned int get_rr_interval(struct rq *rq, struct task_struct *p);
 ```
