@@ -518,8 +518,14 @@ void set_next_task(struct rq *rq, struct task_struct *p, bool first);
 
 # yield_task
 ```c
-void yield_task_freezer(struct rq *rq);
+/* Called when the current task yields the cpu */
+void yield_task(struct rq *rq);
 ```
+yield_task() is used when the current process voluntarily yields cpu, and its implementation is usually very simple, as you can see in [rt](https://elixir.bootlin.com/linux/v5.10.158/source/kernel/sched/rt.c#L1434), which simply requeue the current task.
+
+This is triggered in the kernel, when the system call sched_yield() is called by a process to relinquish the control of the processor voluntarily.
+
+ 
 
 # check_preempt_curr
 ```c
