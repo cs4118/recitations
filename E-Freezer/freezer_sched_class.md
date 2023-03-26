@@ -151,7 +151,7 @@ static void __sched notrace __schedule(bool preempt)
 	unsigned long *switch_count;
 	struct rq *rq;
 
-	/* CODE OMMITTED */
+	/* CODE OMITTED */
 
 	next = pick_next_task(rq, prev, &rf);
 	clear_tsk_need_resched(prev);
@@ -167,7 +167,7 @@ static void __sched notrace __schedule(bool preempt)
 		rq = context_switch(rq, prev, next, &rf);
 	}
 
-	/* CODE OMMITTED */
+	/* CODE OMITTED */
 }
 ```
 
@@ -230,7 +230,7 @@ void update_process_times(int user_tick)
 
 Notice how `update_process_times()` invokes `scheduler_tick()`. In
 `scheduler_tick()`, the scheduler checks to see if the running process's time
-has expired. If so, it sets a (over-simplification alert) per-cpu flag called
+has expired. If so, it sets a (over-simplification alert) per-CPU flag called
 `need_resched`. This indicates to the rest of the kernel that `schedule()`
 should be called. In our simplified example, `scheduler_tick()` would set this
 flag when the current process has been running for 10 milliseconds or more.
@@ -581,7 +581,7 @@ void check_preempt_curr(struct rq *rq, struct task_struct *p, int flags)
 	else if (p->sched_class > rq->curr->sched_class)
 		resched_curr(rq);
 
-	/* CODE OMMITTED */
+	/* CODE OMITTED */
 }	
 ```
 
@@ -633,33 +633,74 @@ and uses the `balance()` callbacks to check if there are runnable tasks of that
 `sched_class`'s priority _or higher_. Notably, `sched_class`'s implementation of
 `balance()` check if `sched_class`s of higher priority also have runnable tasks.
 
-# update_curr
+### `update_curr()`
+
 ```c
 /* Update the current task's runtime statistics.
  */
 void update_curr(struct rq *rq);
 ```
-This function updates the current task's stats such as total execution time and execution start time. It should skip the current tasks that are not in the scheduling class that this function is belonged to.
 
-# prio_changed
+This function updates the current task's stats such as the total execution time.
+Implementing this function allows commands like `ps` and `htop` to display
+accurate statistics. The implementations of this function typically share a
+common segment across the different scheduling classes. This function is
+typically called in other `sched_class` functions to facilitate accurate
+reporting of statistics.
+
+### `prio_changed()`
+
 ```c
 /* Called when the task's priority has changed. */
 void prio_changed(struct rq *rq, struct task_struct *p, int oldprio)
 ```
-Not relevant to freezer since freezer does not have priority.
 
+This function is called whenever a task's priority changes, but the
+`sched_class` remains the same (you can verify this by checking where the
+function pointer is called). This can occur through various syscalls which
+modify the `nice` value, the priority, or other scheduler attributes.
 
-# switched_to
+In a scheduler class with priorities, this function will typically check if the
+task whose priority changed needs to preempt the currently running task (or if
+it is the currently running task, if it should be preempted).
+
+### `switched_to()`
+
 ```c
-/* Called when a task got switched to this scheduling class. */
+/* Called when a task gets switched to this scheduling class. */
 void switched_to(struct rq *rq, struct task_struct *p);
 ```
-For [rt](https://elixir.bootlin.com/linux/v5.10.158/source/kernel/sched/rt.c#L2303)
-and [dl](https://elixir.bootlin.com/linux/v5.10.158/source/kernel/sched/deadline.c#L2456),
-the main consideration is that switching a task into the rq could overload
-the runqueue. So there are efforts by the scheduling class to see whether is
-possible to push some tasks to other runqueues.
 
-Though for lower priority sched classes like cfs and freezer, where overloading
-is not an issue, this just makes sure the task gets to run, and tries to preempt
-the current task if necessary.
+`switched_to()` (and its optional counterpart, `switched_from()`) are called
+from `check_class_changed()`:
+
+```c
+static inline void check_class_changed(struct rq *rq, struct task_struct *p,
+				       const struct sched_class *prev_class,
+				       int oldprio)
+{
+	if (prev_class != p->sched_class) {
+		if (prev_class->switched_from)
+			prev_class->switched_from(rq, p);
+
+		p->sched_class->switched_to(rq, p);
+	} else if (oldprio != p->prio || dl_task(p))
+		p->sched_class->prio_changed(rq, p, oldprio);
+}
+```
+
+`check_class_changed()` gets called from syscalls that modify scheduler
+parameters.
+
+For scheduler classes like
+[rt](https://elixir.bootlin.com/linux/v5.10.158/source/kernel/sched/rt.c#L2303)
+and
+[dl](https://elixir.bootlin.com/linux/v5.10.158/source/kernel/sched/deadline.c#L2456),
+the main consideration when a task's policy changes to their policy is that it
+could overload their runqieue. They then try to push some tasks to other
+runqueues.
+
+However, for lower priority scheduler classes, like CFS, where overloading is
+not an issue, `switched_to()` just ensures that the task gets to run, and
+preempts the current task (which may be of a lower-priority policy) if
+necessary.
