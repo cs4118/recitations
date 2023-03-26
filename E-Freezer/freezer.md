@@ -11,7 +11,7 @@ hope to paint a picture that you can use to implement the freezer scheduler.
 
 Recall from HW1 that in Linux, every process is defined by its `struct
 task_struct`. When you have multiple tasks forked off a common parent, they are
-linked together in a doubly linked-list `struct list_head siblings` embedded
+linked together in a doubly linked-list `struct list_head sibling` embedded
 within the `task_struct`. For example, if you had four processes running on your
 system, each forked off one parent, it would look something like this (the
 parent is not shown):
@@ -26,7 +26,7 @@ In order to get them onto a CPU, I need to introduce you to the `struct rq`.
 ## The `struct_rq`
 
 The `struct rq` is a per-cpu run queue data structure. I like to think of it as
-the virtual CPU. It contains a lot of information (must of which goes way over
+the virtual CPU. It contains a lot of information (most of which goes way over
 my head), but it also includes the list of tasks that will (eventually) run on
 that CPU.
 
