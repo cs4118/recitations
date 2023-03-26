@@ -282,11 +282,10 @@ an array of `sched_class`'s. The first class in the array is of lower priority
 than the second. In other words, `sched_class_dl` has a higher priority than
 `sched_class_rt`. Now, every time a new process needs to be scheduled, the
 kernel can simply go through the class array and check if there is a process of
-that class that needs to run. Let's take a look at this in practice as
-implemented in `linux\kernel\sched\core.c`.
+that class that needs to run. Let's take a look at this as implemented in
+`linux\kernel\sched\core.c`.
 
 ```c
-
 static inline struct task_struct *
 pick_next_task(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
 {
