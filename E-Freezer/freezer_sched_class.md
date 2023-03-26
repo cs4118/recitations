@@ -27,9 +27,7 @@ how one may leverage its modularity to plug in their own scheduler.
 We'll begin by examining the basic role of the core scheduler and how the rest
 of the kernel interfaces with it. Then, we'll look at `sched_class`, the modular
 data structure that permits various scheduling algorithms to live and operate
-side-by-side in the kernel. In the process, I will give a high-level tour of
-Linux's Completely Fair Scheduler (CFS). Finally, we'll touch on the concept of
-group scheduling.
+side-by-side in the kernel.
 
 ### A Top Down Approach
 
@@ -269,7 +267,7 @@ called.
 ## Understanding `sched_class`
 
 In this section, I will analyze `struct sched_class` and talk briefly about what
-each function does. I've reproduced `struct sched_class` below.
+most of the functions do. I've reproduced `struct sched_class` below.
 
 ```c
 struct sched_class {
@@ -345,9 +343,9 @@ void dequeue_task(struct rq *rq, struct task_struct *p, int flags);
 `enqueue_task()` and `dequeue_task()` are used to put a task on the runqueue and
 remove a task from the runqueue, respectively. Each of these functions are
 passed the task to be enqueued/dequeued, as well as the runqueue it should be
-added/removed from. In addition, these functions are given a bit vector of flags
-that describe *why* enqueue or dequeue is being called. Here are the various
-flags, which are described in
+added to/removed from. In addition, these functions are given a bit vector of
+flags that describe *why* enqueue or dequeue is being called. Here are the
+various flags, which are described in
 [sched.h](https://elixir.bootlin.com/linux/v5.10.158/source/kernel/sched/sched.h#L1743):
 
 ```c
@@ -404,7 +402,7 @@ These functions are called for a variety of reasons:
 
 ```c
 /* Pick the task that should be currently running. */
-struct task_struct * pick_next_task(struct rq *rq);
+struct task_struct *pick_next_task(struct rq *rq);
 ```
 
 `pick_next_task()` is called by the core scheduler to determine which of `rq`'s
@@ -413,8 +411,8 @@ supposed to return the task that should run *after* the currently running task;
 instead, it's supposed to return the `task_struct` that should be running now,
 **in this instant.**
 
-If necessary, the kernel will context switch from the currently running task to
-the task returned by `pick_next_task()`.
+The kernel will context switch from the currently running task to the task
+returned by `pick_next_task()`.
 
 ### `put_prev_task()`
 
@@ -426,7 +424,7 @@ void put_prev_task(struct rq *rq, struct task_struct *p);
 `put_prev_task()` is called whenever a task is to be taken off the CPU. The
 behavior of this function is up to the specific `sched_class`. Some schedulers
 do very little in this function. For example, the realtime scheduler uses this
-function as an opportunity to perform simple bookeeping. On the other hand,
+function as an opportunity to perform simple bookkeeping. On the other hand,
 CFS's `put_prev_task_fair()` needs to do a bit more work. As an optimization,
 CFS keeps the currently running task out of its RB tree. It uses the
 `put_prev_task` hook as an opportunity to put the currently running task (that
@@ -438,8 +436,8 @@ which is
 in `sched.h`. `put_prev_task()` gets called in the core scheduler's
 `pick_next_task()`, after the policy-specific `pick_next_task()` implementation
 is called, but before any context switch is performed. This gives us an
-opportunity to perform any operations we need to do to move on from the previously
-running task in our scheduler implementations.
+opportunity to perform any operations we need to do to move on from the
+previously running task in our scheduler implementations.
 
 Note that this was not the case in older kernels: The `sched_class`'s
 `pick_next_task()` is expected to call `put_prev_task()` by itself! This is
@@ -636,8 +634,7 @@ and uses the `balance()` callbacks to check if there are runnable tasks of that
 ### `update_curr()`
 
 ```c
-/* Update the current task's runtime statistics.
- */
+/* Update the current task's runtime statistics. */
 void update_curr(struct rq *rq);
 ```
 
