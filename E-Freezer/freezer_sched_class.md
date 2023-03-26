@@ -341,11 +341,37 @@ void dequeue_task(struct rq *rq, struct task_struct *p, int flags);
 ```
 
 `enqueue_task()` and `dequeue_task()` are used to put a task on the runqueue and
-remove a task from the runqueue, respectively. Each of these functions are
-passed the task to be enqueued/dequeued, as well as the runqueue it should be
-added to/removed from. In addition, these functions are given a bit vector of
-flags that describe *why* enqueue or dequeue is being called. Here are the
-various flags, which are described in
+remove a task from the runqueue, respectively.
+
+These functions are called for a variety of reasons:
+
+* When a child process is first forked, `enqueue_task()` is called to put it on
+  a runqueue. When a process exits, `dequeue_task()` takes it off the runqueue.
+
+* When a process goes to sleep, `dequeue_task()` takes it off the runqueue. For
+  example, this happens when the process needs to wait for a lock or IO event.
+  When the IO event occurs, or the lock becomes available, the process wakes up.
+  It must then be re-enqueued with `enqueue_task()`.
+
+* Process migration - if a process must be migrated from one CPU's runqueue to
+  another, it's dequeued from its old runqueue and enqueued on a different one
+  using this function.
+
+* When `set_cpus_allowed()` is called to change the task's processor affinity,
+  it may need to be enqueued on a different CPU's runqueue.
+
+* When the priority of a process is boosted to avoid priority inversion. In this
+  case, the task used to have a low-priority `sched_class`, but is being
+  promoted to a `sched_class` with high priority. This action occurs in
+  `rt_mutex_setprio()`.
+
+* From `__sched_setscheduler`. If a task's `sched_class` has changed, it's
+  dequeued using its old `sched_class` and enqueued with the new one.
+
+Each of these functions are passed the task to be enqueued/dequeued, as well as
+the runqueue it should be added to/removed from. In addition, these functions
+are given a bit vector of flags that describe *why* enqueue or dequeue is being
+called. Here are the various flags, which are described in
 [sched.h](https://elixir.bootlin.com/linux/v5.10.158/source/kernel/sched/sched.h#L1743):
 
 ```c
@@ -372,31 +398,6 @@ various flags, which are described in
 The `flags` argument can be tested using the bitwise `&` operation. For example,
 if the task was just migrated from another CPU, `flags & ENQUEUE_MIGRATED`
 evaluates to 1.
-
-These functions are called for a variety of reasons:
-
-* When a child process is first forked, `enqueue_task()` is called to put it on
-  a runqueue. When a process exits, `dequeue_task()` takes it off the runqueue.
-
-* When a process goes to sleep, `dequeue_task()` takes it off the runqueue. For
-  example, this happens when the process needs to wait for a lock or IO event.
-  When the IO event occurs, or the lock becomes available, the process wakes up.
-  It must then be re-enqueued with `enqueue_task()`.
-
-* Process migration - if a process must be migrated from one CPU's runqueue to
-  another, it's dequeued from its old runqueue and enqueued on a different one
-  using this function.
-
-* When `set_cpus_allowed()` is called to change the task's processor affinity,
-  it may need to be enqueued on a different CPU's runqueue.
-
-* When the priority of a process is boosted to avoid priority inversion. In this
-  case, the task used to have a low-priority `sched_class`, but is being
-  promoted to a `sched_class` with high priority. This action occurs in
-  `rt_mutex_setprio()`.
-
-* From `__sched_setscheduler`. If a task's `sched_class` has changed, it's
-  dequeued using its old `sched_class` and enqueued with the new one.
 
 ### `pick_next_task()`
 
