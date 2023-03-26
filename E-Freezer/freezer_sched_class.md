@@ -116,6 +116,13 @@ struct rt_rq rt;    // Real-time scheduler runqueue
 struct dl_rq dl;    // Deadline scheduler runqueue
 ```
 
+For example, CFS, which is the default scheduler in modern Linux kernels, uses a
+red-black tree data structure to keep track of processes, with each process
+assigned a "virtual runtime" that determines its priority in the scheduling
+queue. The scheduler then selects the process with the lowest virtual runtime to
+run next, ensuring that each process gets a fair share of CPU time over the long
+term.
+
 Keep these details in the back of your mind so that you don't get bogged down.
 Remember: the goal here is to understand how the scheduler interoperates with
 the rest of the kernel. The main takeaway is that a process is allowed to run
@@ -132,6 +139,12 @@ runqueue. In this case, the process has **yielded** the CPU. In summary:
 * "preemption" is when a process is forcibly kicked off the CPU.
 
 * "yielding" is when a process voluntarily gives up the CPU.
+
+In addition to an expired timeslice, there are several other reasons that
+preemption may occur. For example, when an interrupt occurs, the CPU may be
+preempted to handle the interrupt. Additionally, a real-time process may have a
+higher priority than some other process and may preempt lower-priority processes
+to ensure that it meets its deadline.
 
 ### `schedule()`
 
