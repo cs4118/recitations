@@ -11,7 +11,7 @@ hope to paint a picture that you can use to implement the freezer scheduler.
 
 Recall from HW1 that in Linux, every process is defined by its `struct
 task_struct`. When you have multiple tasks forked off a common parent, they are
-linked together in a doubly linked-list `struct list_head siblings` embedded
+linked together in a doubly linked-list `struct list_head sibling` embedded
 within the `task_struct`. For example, if you had four processes running on your
 system, each forked off one parent, it would look something like this (the
 parent is not shown):
@@ -26,7 +26,7 @@ In order to get them onto a CPU, I need to introduce you to the `struct rq`.
 ## The `struct_rq`
 
 The `struct rq` is a per-cpu run queue data structure. I like to think of it as
-the virtual CPU. It contains a lot of information (must of which goes way over
+the virtual CPU. It contains a lot of information (most of which goes way over
 my head), but it also includes the list of tasks that will (eventually) run on
 that CPU.
 
@@ -87,7 +87,7 @@ Now that you have the `struct rq` setup, you need to have some mechanism to join
 your `task_struct`s into the queue. Here, too, you can't just include a
 `list_head node` to add a task onto the scheduler-specific runqueue because
 you'll need additional bookkeeping. As you have probably guessed, we are going
-to wrap the list_head and all the bookkeeping variables into their own struct.
+to wrap the `list_head` and all the bookkeeping variables into their own struct.
 
 In Linux, we name these structs `sched_{class}_entity` (one exception is that
 CFS names this `sched_entity`). For example, the real-time scheduling class
@@ -282,11 +282,10 @@ an array of `sched_class`'s. The first class in the array is of lower priority
 than the second. In other words, `sched_class_dl` has a higher priority than
 `sched_class_rt`. Now, every time a new process needs to be scheduled, the
 kernel can simply go through the class array and check if there is a process of
-that class that needs to run. Let's take a look at this in practice as
-implemented in `linux\kernel\sched\core.c`.
+that class that needs to run. Let's take a look at this as implemented in
+`linux\kernel\sched\core.c`.
 
 ```c
-
 static inline struct task_struct *
 pick_next_task(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
 {
