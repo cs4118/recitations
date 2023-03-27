@@ -87,7 +87,7 @@ Now that you have the `struct rq` setup, you need to have some mechanism to join
 your `task_struct`s into the queue. Here, too, you can't just include a
 `list_head node` to add a task onto the scheduler-specific runqueue because
 you'll need additional bookkeeping. As you have probably guessed, we are going
-to wrap the list_head and all the bookkeeping variables into their own struct.
+to wrap the `list_head` and all the bookkeeping variables into their own struct.
 
 In Linux, we name these structs `sched_{class}_entity` (one exception is that
 CFS names this `sched_entity`). For example, the real-time scheduling class
