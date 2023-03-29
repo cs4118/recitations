@@ -115,13 +115,12 @@ What does this mean for us in light of the fact that our kernel config specifies
 CONFIG_PGTABLE_LEVELS=4
 ```
 
-If we look at the [sample
-session](https://cs4118.github.io/cabinet/testing/session1.html)
-from the Cabinet prompt, it shows that the `p4d_paddr` and `pud_paddr` are
-identical.
+If we look at the output from an example program that reports the physical
+addresses of the process' page frame and of the intermediate page tables,
+it shows that the `p4d_paddr` and `pud_paddr` are identical.
 
 ```
-[405] inspect_cabinet():
+[405] inspect_physical_address():
 paddr: 0x115a3c069
 pf_paddr: 0x115a3c000
 pte_paddr: 0x10d2c7000
@@ -183,7 +182,7 @@ exists by making it appear that the p4d is a mirror copy of the pgd.
 If you read on in `arch/x86/include/asm/pgtable_types.h` you'll see that the kernel uses the same
 scheme for 3 and 2 level page table configurations as well. arm64 follows a similar scheme in `arch/arm64/include/asm/pgtable-types.h`
 
-NOTE that you cannot make use of this equivalence directly. Your Cabinet
+NOTE that you cannot make use of this equivalence directly. Your Farfetch'd
 implementation must work correctly for any page table configuration and
 therefore must use the macros defined by the kernel.
 
