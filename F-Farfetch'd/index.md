@@ -161,7 +161,7 @@ static inline p4dval_t native_p4d_val(p4d_t p4d)
 }
 #endif
 ```
-[x86 Source](https://elixir.bootlin.com/linux/v5.10.58/source/arch/x86/include/asm/pgtable_types.h#L332)
+[x86 Source](https://elixir.bootlin.com/linux/v5.10.158/source/arch/x86/include/asm/pgtable_types.h#L332)
 
 Interesting. Looking at `pgtable-nop4d.h` we find that `p4d_t` is defined as
 ```
@@ -173,7 +173,7 @@ represented by `p4d_t`, essentially become a type alias for `pgd_t`. The kernel
 does this so that it has a standard 5-level page table interface to program
 against regardless of how many levels of page tables actually exist.
 
-As of writing, arm64 (for linux 5.10.58) directly includes `pgtable-nop4d.h`.
+As of writing, arm64 (for linux 5.10.158) directly includes `pgtable-nop4d.h`.
 
 To summarize, with 4-level paging there are no "real" p4d tables. Instead, pgd
 entries contain the addresses of pud tables, and the kernel "pretends" the p4d
@@ -266,7 +266,7 @@ a macro for this purpose.
 You will find section 3.4 of Gordman useful for figuring out how to retrieve
 the refcount of a page frame. Hint: every physical frame has a `struct page` in
 the kernel, which is defined
-[here](https://elixir.bootlin.com/linux/v5.10.58/source/include/linux/mm_types.h#L70).
+[here](https://elixir.bootlin.com/linux/v5.10.158/source/include/linux/mm_types.h#L70).
 Be sure to use the correct kernel functions / macros to access any information
 in `struct page`.
 
