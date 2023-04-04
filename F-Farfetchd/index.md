@@ -26,7 +26,7 @@ hardware does this by using the virtual address as a set of indices into the
 page table.
 
 <div align='center'>
-    <img src='./x86_address_structure.svg'/>
+    <img src='./x86_address_structure.png'/>
 </div>
 
 [Source](https://os.phil-opp.com/page-tables)
@@ -45,7 +45,7 @@ The last 12 bits allow the virtual address to specify a specific byte offset
 within the page frame.
 
 <div align='center'>
-    <img src='./X86_Paging_64bit.svg'/>
+    <img src='./x86_paging_64bit.png'/>
 </div>
 
 For clarity, we're using the naming scheme in the diagram (P4, P3,...), which
@@ -115,13 +115,12 @@ What does this mean for us in light of the fact that our kernel config specifies
 CONFIG_PGTABLE_LEVELS=4
 ```
 
-If we look at the [sample
-session](https://cs4118.github.io/cabinet/testing/session1.html)
-from the Cabinet prompt, it shows that the `p4d_paddr` and `pud_paddr` are
-identical.
+If we look at the output from an example program that reports the physical
+addresses of the process' page frame and of the intermediate page tables,
+it shows that the `p4d_paddr` and `pud_paddr` are identical.
 
 ```
-[405] inspect_cabinet():
+[405] inspect_physical_address():
 paddr: 0x115a3c069
 pf_paddr: 0x115a3c000
 pte_paddr: 0x10d2c7000
@@ -162,7 +161,7 @@ static inline p4dval_t native_p4d_val(p4d_t p4d)
 }
 #endif
 ```
-[x86 Source](https://elixir.bootlin.com/linux/v5.10.57/source/arch/x86/include/asm/pgtable_types.h#L332)
+[x86 Source](https://elixir.bootlin.com/linux/v5.10.158/source/arch/x86/include/asm/pgtable_types.h#L332)
 
 Interesting. Looking at `pgtable-nop4d.h` we find that `p4d_t` is defined as
 ```
@@ -174,7 +173,7 @@ represented by `p4d_t`, essentially become a type alias for `pgd_t`. The kernel
 does this so that it has a standard 5-level page table interface to program
 against regardless of how many levels of page tables actually exist.
 
-As of writing, arm64 (for linux 5.10.57) directly includes `pgtable-nop4d.h`.
+As of writing, arm64 (for linux 5.10.158) directly includes `pgtable-nop4d.h`.
 
 To summarize, with 4-level paging there are no "real" p4d tables. Instead, pgd
 entries contain the addresses of pud tables, and the kernel "pretends" the p4d
@@ -183,7 +182,7 @@ exists by making it appear that the p4d is a mirror copy of the pgd.
 If you read on in `arch/x86/include/asm/pgtable_types.h` you'll see that the kernel uses the same
 scheme for 3 and 2 level page table configurations as well. arm64 follows a similar scheme in `arch/arm64/include/asm/pgtable-types.h`
 
-NOTE that you cannot make use of this equivalence directly. Your Cabinet
+NOTE that you cannot make use of this equivalence directly. Your Farfetch'd
 implementation must work correctly for any page table configuration and
 therefore must use the macros defined by the kernel.
 
@@ -267,7 +266,7 @@ a macro for this purpose.
 You will find section 3.4 of Gordman useful for figuring out how to retrieve
 the refcount of a page frame. Hint: every physical frame has a `struct page` in
 the kernel, which is defined
-[here](https://elixir.bootlin.com/linux/v5.10.57/source/include/linux/mm_types.h#L70).
+[here](https://elixir.bootlin.com/linux/v5.10.158/source/include/linux/mm_types.h#L70).
 Be sure to use the correct kernel functions / macros to access any information
 in `struct page`.
 
