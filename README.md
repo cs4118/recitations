@@ -21,5 +21,5 @@ welcome.
 - [Note D](D-Fridge/waitqueue.pdf): Linux wait queue (hw5)
 - [Note E](E-Freezer/freezer.md): Linux scheduler data structures, implementing
   a scheduler (hw6)
-- [Note F](F-Cabinet/index.md): Linux page table data structures,
+- [Note F](F-Farfetchd/index.md): Linux page table data structures,
   macros/functions (hw7)
