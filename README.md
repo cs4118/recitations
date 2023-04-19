@@ -23,3 +23,5 @@ welcome.
   a scheduler (hw6)
 - [Note F](F-Farfetchd/index.md): Linux page table data structures,
   macros/functions (hw7)
+- [Note G](G-Pantry): Linux page cache, implementing a file system (hw8)
+  
