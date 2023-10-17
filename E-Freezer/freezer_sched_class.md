@@ -643,7 +643,7 @@ The main idea is to prevent any runqueue from becoming empty, as this is a waste
 of resources. This loop starts with the currently running task's `sched_class`
 and uses the `balance()` callbacks to check if there are runnable tasks of that
 `sched_class`'s priority _or higher_. Notably, `sched_class`'s implementation of
-`balance()` check if `sched_class`s of higher priority also have runnable tasks.
+`balance()` checks if `sched_class`s of higher priority also have runnable tasks.
 
 ### `update_curr()`
 
@@ -708,7 +708,7 @@ For scheduler classes like
 and
 [dl](https://elixir.bootlin.com/linux/v5.10.158/source/kernel/sched/deadline.c#L2456),
 the main consideration when a task's policy changes to their policy is that it
-could overload their runqieue. They then try to push some tasks to other
+could overload their runqueue. They then try to push some tasks to other
 runqueues.
 
 However, for lower priority scheduler classes, like CFS, where overloading is
